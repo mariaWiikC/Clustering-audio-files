@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="audio-analysis">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../audio-analysis" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../audio-analysis/src" />
+    </SOURCES>
+  </library>
+</component>
