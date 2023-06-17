@@ -12,6 +12,7 @@ import java.util.*;
 
 public class Main
 {
+    // apparently i'm getting empty clusters, aaaaaaaaa, find a way to fix this?
     public static void main(String[] args) throws UnsupportedAudioFileException, IOException
     {
         final File folder = new File("src/allSongs");
@@ -20,6 +21,24 @@ public class Main
         List<List<Double>> allFrequencies = new ArrayList<>();
         List<String> nameSongs = new ArrayList<>();
         AudioInputStream audioInputStream;
+
+        String[][] songKeys = {{"A#", "Gm"}, {"E"}, {"Ab"}, {"Cm", "F"}, {"Am"}, {"E"}, {"C", "F"}, {"A", "Fm"},
+                {"D", "Em"}, {"Am", "C"}, {"C", "D"}, {"Eb"}, {"D"}, {"C", "Bb"}, {"G", "D"}, {"Ab", "Eb"},
+                {"F#m", "Em"}, {"C"}, {"C"}, {"A"}, {"D", "C"}, {"F"}, {"Fm", "Eb"}, {"A", "Bb"}};
+
+        // do I keep the subdominants? -> deleted them
+        String[][] relatedKeys = {{"C", "Am", "F", "G", "Dm", "Em", "Cm"},
+                {"G", "Em", "C", "D", "Am", "Bm", "Gm"},
+                {"D", "Bm", "Cbm", "G", "A", "Em", "Fbm", "F#m", "Gbm", "Dm"},
+                {"A", "F#m", "Gbm", "D", "E", "Fb", "Bm", "Cbm", "C#m", "Dbm", "Am"},
+                {"E", "Fb", "C#m", "Dbm", "A", "B", "Cb", "F#m", "Gbm", "G#m", "Abm", "Em", "Fbm"},
+                {"B", "Cb", "G#m", "Abm", "E", "Fb", "F#", "Gb", "C#m", "Dbm", "Dbm", "D#m", "Ebm", "Bm", "Cbm"},
+                {"F#", "Gb", "D#m", "Ebm", "B", "Cb", "C#", "Db", "G#m", "Abm", "A#m", "Bbm", "F#m", "Gbm"},
+                {"C#", "Db", "A#m", "Bbm", "F#", "Gb", "G#", "Ab", "D#m", "Ebm", "E#m", "Fm", "C#m", "Dbm"},
+                {"G#", "Ab", "E#m", "Fm", "C#", "Db", "D#", "Eb", "A#m", "Bbm", "B#m", "Cm", "G#m", "Abm"},
+                {"D#", "Eb", "B#m", "Cm", "G#", "Ab", "A#", "Bb", "E#m", "Fm", "Gm", "D#m", "Ebm"},
+                {"A#", "Bb", "Gm", "D#", "Eb", "E#", "F", "B#m", "Cm", "Dm", "A#m", "Bbm"},
+                {"F", "Dm", "Bb", "C", "Gm", "Am", "Fm"}};
 
         // for when I'm testing individual files
         /*
@@ -37,21 +56,111 @@ public class Main
 
         // preparation for K-means clustering
         // decide on number of clusters I will have
-        int dimension = 5;
-        double[] centroid1 = new double[dimension];
-        double[] centroid2 = new double[dimension];
+        int dimension = 5, k = 3;
 
-        kMeansClusterManhattanD(centroid1, centroid2, dimension, allFrequencies, nameSongs);
+        System.out.println(checkClusters(relatedKeys,
+                kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
 
         // preparation for Hierarchical clustering
         //hierarchicalClusteringManhattanD(allFrequencies, nameSongs);
     }
 
-    static void buildCentroidK(double[] centroid, int dimension)
+    static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
+                                                       ArrayList<ArrayList<ArrayList<String>>> keys)
     {
-        int[] tens = {100, 1000};
+        ArrayList<ArrayList<Integer>> rNumRelKey = new ArrayList<>();
+        for (int i = 0; i < keys.size(); i++)
+        {
+            rNumRelKey.add(new ArrayList<>());
+        }
+        // keys.size is the same as the total number of clusters?
+        for (int i = 0; i < keys.size(); i++)
+        {
+            ArrayList<String> clusterNoRep = new ArrayList<>();
+            for (int j = 0; j < keys.get(i).size(); j++)
+            {
+                for (int l = 0; l < keys.get(i).get(j).size(); l++)
+                {
+                    String toAdd = keys.get(i).get(j).get(l);
+                    if (!clusterNoRep.contains(toAdd))
+                        clusterNoRep.add(toAdd);
+                }
+            }
+
+            // check which row from related keys is the most similar
+            ArrayList<Integer> similarityCounter = new ArrayList<>();
+            for (int r = 0; r < relatedKeys.length; r++)
+            {
+                int numSimilar = 0;
+                for (int c = 0; c < relatedKeys[r].length; c++)
+                {
+                    if (clusterNoRep.contains(relatedKeys[r][c]))
+                        numSimilar++;
+                }
+                similarityCounter.add(numSimilar);
+            }
+            // what if there is more than one row with the same number of similarities? -> then ig it doesn't matter?
+            // because I get the same result?
+            int maxInd = findIndMaxValue(similarityCounter);
+
+
+            // go through the keys of the cluster I'm at, if the row contains the key, 1 right, if not, 1 wrong.
+            int correctCluster = 0, wrong = 0;
+            for (int j = 0; j < keys.get(i).size(); j++)
+            {
+                boolean oneW = false, twoW = false;
+                for (int l = 0; l < keys.get(i).get(j).size(); l++)
+                {
+                    // search in the row
+                    // I'll just try to find a previous version where this was working, everything will be ok
+                    for (int c = 0; c < relatedKeys[maxInd].length; c++)
+                    {
+                        if (keys.get(i).get(j).get(l).equals(relatedKeys[maxInd][c]))
+                        {
+                            correctCluster++;
+                            if (oneW)
+                                twoW = true;
+                            else
+                                oneW = true;
+                        }
+                    }
+                }
+                if (keys.get(i).get(j).size() == 2 && twoW)
+                    wrong++;
+            }
+            int total = correctCluster - wrong;
+            // row of the right key group
+            rNumRelKey.get(i).add(maxInd);
+            // points in the right cluster
+            rNumRelKey.get(i).add(total);
+            //points in the wrong cluster -> smt wrong with this num
+            rNumRelKey.get(i).add((keys.get(i).size() - total));
+        }
+        return rNumRelKey;
+    }
+
+    static int findIndMaxValue(ArrayList<Integer> arr)
+    {
+        int maxValue = arr.get(0), index = 0;
+        for (int i = 0; i < arr.size(); i++)
+        {
+            if (arr.get(i) > maxValue)
+            {
+                index = i;
+                maxValue = arr.get(i);
+            }
+        }
+        return index;
+    }
+
+    static double[] buildCentroidK(int dimension)
+    {
+        double[] centroid = new double[dimension];
+        int[] tens = {1000};
         for (int i = 0; i < dimension; i++)
             centroid[i] = Math.random() * getRandom(tens);
+
+        return centroid;
     }
 
     static boolean findFrequencies(AudioInputStream audioInputStream, List<List<Double>> allFrequencies) throws IOException
@@ -59,7 +168,8 @@ public class Main
         AudioFormat audioFormat = audioInputStream.getFormat();
         float sampleRate = audioFormat.getSampleRate();
         // WHAT NUMBER DO I USE FOR n -> justify!!!!!!!!! - i think it has to be a power of 2?
-        int n = 4096;
+        // this is the num of samples i collect per second? too small, increase
+        int n = 8192;
         byte[] array = new byte[n];
 
         int sample = audioInputStream.read(array);
@@ -108,6 +218,7 @@ public class Main
         // find all the peaks
         ArrayList<Integer> peaks = isPeak(mod);
 
+        // AUTOMATIZAR ISSO
         // getting 3 highest peaks and their index -> all I need is the index
         double maxMod2 = 0, maxMod3 = 0, maxMod4 = 0, maxMod5 = 0, maxMod6 = 0;
         double iMaxMod2 = 0, iMaxMod3 = 0, iMaxMod4 = 0, iMaxMod5 = 0, iMaxMod6 = 0;
@@ -245,145 +356,141 @@ public class Main
         return false;
     }
 
-    // i have 5 "dimensions" now, not just X and Y
-    // this is not workingggg, I have to change, probs smt with the distance calculations
-    static void kMeansClusterManhattanD(double[] centroid1, double[] centroid2, int dimension,
-                                        List<List<Double>> allFrequencies, List<String> nameSongs)
+    static double[] findMinD(List<Double> Ds)
     {
-        buildCentroidK(centroid1, dimension);
-        buildCentroidK(centroid2, dimension);
+        int indexMin = 0;
+        double min = Ds.get(0);
+        for (int i = 0; i < Ds.size(); i++)
+        {
+            if (Ds.get(i) < min)
+            {
+                min = Ds.get(i);
+                indexMin = i;
+            }
+        }
+        return new double[]{Ds.get(indexMin), indexMin};
+    }
 
-        ArrayList<String> cluster1 = new ArrayList<>();
-        ArrayList<String> cluster2 = new ArrayList<>();
+    // i have 5 "dimensions" now, not just X and Y
+    // this is not working, I have to change, probs smt with the distance calculations
+    static ArrayList<ArrayList<ArrayList<String>>> kMeansClusterManhattanD(int dimension, List<List<Double>> allFrequencies,
+                                                                           List<String> nameSongs, int k, String[][] songKeys)
+    {
+        ArrayList<double[]> centroids = new ArrayList<>();
+        for (int i = 0; i < k; i++)
+            centroids.add(buildCentroidK(dimension));
 
         System.out.print("Initial position centroid 1: ");
-        for (double c : centroid1)
+        for (double c : centroids.get(0))
             System.out.print(c + " ");
         System.out.println();
         System.out.print("Initial position centroid 2: ");
-        for (double c : centroid2)
+        for (double c : centroids.get(1))
+            System.out.print(c + " ");
+        System.out.println();
+        System.out.print("Initial position centroid 3: ");
+        for (double c : centroids.get(2))
             System.out.print(c + " ");
         System.out.println();
 
         // What should be max value for iterations ?
-        int counter = 0, maxIterations = 5;
+        int counter = 0, maxIterations = 1000;
 
         // for loop to check in which cluster each point goes
         // calculate distance from both centroids, go to the closest one
         // recalculate centroids and distances until the points are basically equally divided
         boolean proceed = true;
-        double d1, d2;
 
-        double sumXc1, sumYc1, sumZc1, sumAc1, sumBc1;
-        double sumXc2, sumYc2, sumZc2, sumAc2, sumBc2;
+        ArrayList<Double> Ds = new ArrayList<>();
+        for (int i = 0; i < k; i++)
+            Ds.add(0.0);
+
+        ArrayList<ArrayList<String>> clusters = new ArrayList<>();
+        for (int i = 0; i < k; i++)
+            clusters.add(new ArrayList<>());
+
+        ArrayList<ArrayList<Double>> sums = new ArrayList<>();
+        for (int i = 0; i < k; i++)
+        {
+            sums.add(new ArrayList<>());
+            for (int j = 0; j < dimension; j++)
+                sums.get(i).add(0.0);
+        }
 
         while (proceed)
         {
             for (int i = 0; i < allFrequencies.size(); i++)
             {
-                d1 = calcManhD(centroid1, allFrequencies, i);
-                d2 = calcManhD(centroid2, allFrequencies, i);
+                for (int j = 0; j < k; j++)
+                    Ds.set(j, calcManhD(centroids.get(j), allFrequencies, i));
 
-                if (d1 < d2)
-                    cluster1.add(nameSongs.get(i));
-                else
-                    cluster2.add(nameSongs.get(i));
+                clusters.get((int) findMinD(Ds)[1]).add(nameSongs.get(i));
             }
 
-            double half = allFrequencies.size() / 2.0;
-            if (cluster1.size() == Math.floor(half) || cluster1.size() == Math.ceil(half)
-                    || counter > maxIterations)
-            {
+            if (counter > maxIterations)
                 proceed = false;
-            }
 
             else
             {
                 counter++;
-                sumXc1 = 0;
-                sumYc1 = 0;
-                sumZc1 = 0;
-                sumAc1 = 0;
-                sumBc1 = 0;
-                sumXc2 = 0;
-                sumYc2 = 0;
-                sumZc2 = 0;
-                sumAc2 = 0;
-                sumBc2 = 0;
+                for (ArrayList<Double> sum : sums)
+                    for (int j = 0; j < dimension; j++)
+                        sum.set(j, 0.0);
 
-                //recalculate centroids
-                for (String key1 : cluster1)
+                for (int i = 0; i < clusters.size(); i++)
                 {
-                    for (int l = 0; l < nameSongs.size(); l++)
+                    //recalculate centroids
+                    for (String key1 : clusters.get(i))
                     {
-                        if (key1.equals(nameSongs.get(l)))
+                        for (int l = 0; l < nameSongs.size(); l++)
                         {
-                            sumXc1 = sumXc1 + allFrequencies.get(l).get(0);
-                            sumYc1 = sumYc1 + allFrequencies.get(l).get(1);
-                            sumZc1 = sumZc1 + allFrequencies.get(l).get(2);
-                            sumAc1 = sumAc1 + allFrequencies.get(l).get(3);
-                            sumBc1 = sumBc1 + allFrequencies.get(l).get(4);
+                            if (key1.equals(nameSongs.get(l)))
+                                for (int j = 0; j < dimension; j++)
+                                    sums.get(i).set(j, sums.get(i).get(j) + allFrequencies.get(l).get(j));
+
+                            if (!clusters.get(i).isEmpty())
+                                for (int j = 0; j < dimension; j++)
+                                    centroids.get(i)[j] = sums.get(i).get(j) / clusters.get(i).size();
                         }
                     }
                 }
 
-                if (!cluster1.isEmpty())
-                {
-                    centroid1[0] = sumXc1 / cluster1.size();
-                    centroid1[1] = sumYc1 / cluster1.size();
-                    centroid1[2] = sumZc1 / cluster1.size();
-                    centroid1[3] = sumAc1 / cluster1.size();
-                    centroid1[4] = sumBc1 / cluster1.size();
-                }
-
-
-                for (String key2 : cluster2)
-                {
-                    for (int l = 0; l < nameSongs.size(); l++)
-                    {
-                        if (key2.equals(nameSongs.get(l)))
-                        {
-                            sumXc2 = sumXc2 + allFrequencies.get(l).get(0);
-                            sumYc2 = sumYc2 + allFrequencies.get(l).get(1);
-                            sumZc2 = sumZc2 + allFrequencies.get(l).get(2);
-                            sumAc2 = sumAc2 + allFrequencies.get(l).get(3);
-                            sumBc2 = sumBc2 + allFrequencies.get(l).get(4);
-                        }
-                    }
-                }
-
-                if (!cluster2.isEmpty())
-                {
-                    centroid2[0] = sumXc2 / cluster2.size();
-                    centroid2[1] = sumYc2 / cluster2.size();
-                    centroid2[2] = sumZc2 / cluster2.size();
-                    centroid2[3] = sumAc2 / cluster2.size();
-                    centroid2[4] = sumBc2 / cluster2.size();
-                }
-
-                cluster1.clear();
-                cluster2.clear();
+                for (ArrayList<String> c : clusters)
+                    c.clear();
             }
         }
 
-        for (String c : cluster1)
+        // find position of song in the array and use the index to find corresponding key from key arr
+        ArrayList<ArrayList<ArrayList<String>>> keys = new ArrayList<>();
+        for (ArrayList<String> cluster : clusters)
         {
-            System.out.print(c + ", ");
+            ArrayList<ArrayList<String>> key = new ArrayList<>();
+            keys.add(key);
+            for (String c : cluster)
+            {
+                // c + " k: " +
+                int indexC = nameSongs.indexOf(c);
+                ArrayList<String> toA = new ArrayList<>();
+                key.add(toA);
+                for (int i = 0; i < songKeys[indexC].length; i++)
+                {
+                    System.out.print(songKeys[indexC][i] + ", ");
+                    toA.add(songKeys[indexC][i]);
+                }
+                System.out.print("; ");
+            }
+            System.out.println();
         }
-        System.out.println();
-        for (String q : cluster2)
-        {
-            System.out.print(q + ", ");
-        }
-        System.out.println();
+
+        return keys;
     }
 
     static void hierarchicalClusteringManhattanD(List<List<Double>> allFrequencies,
-                                                 List<String> nameSongs)
+                                                 List<String> nameSongs, String[] songKeys)
     {
         // choose a better number for smallestDistance
         double sumX, sumY, sumZ, sumA, sumB, smallestDistance;
-        int indexSong, index2 = 0, k;
+        int indexSong, index2 = 0;
         // What should be max value for iterations ?
         int counter = 0, maxIterations = 100, totalNumClusters = 2;
 
@@ -429,7 +536,7 @@ public class Main
                                 Math.abs((centroids.get(i).get(1) - centroids.get(j).get(1))) +
                                 Math.abs((centroids.get(i).get(2) - centroids.get(j).get(2))) +
                                 Math.abs((centroids.get(i).get(3) - centroids.get(j).get(3))) +
-                        Math.abs((centroids.get(i).get(4) - centroids.get(j).get(4)))));
+                                Math.abs((centroids.get(i).get(4) - centroids.get(j).get(4)))));
             }
         }
 
@@ -547,7 +654,7 @@ public class Main
                                         Math.abs((centroids.get(p).get(1) - centroids.get(j).get(1))) +
                                         Math.abs((centroids.get(p).get(2) - centroids.get(j).get(2))) +
                                         Math.abs((centroids.get(p).get(3) - centroids.get(j).get(3))) +
-                                Math.abs((centroids.get(p).get(4) - centroids.get(j).get(4)))));
+                                        Math.abs((centroids.get(p).get(4) - centroids.get(j).get(4)))));
                     }
                 }
             }
@@ -561,9 +668,7 @@ public class Main
 
     static boolean checkDone(List<List<String>> clusters, int totalNumClusters)
     {
-        if (clusters.size() <= totalNumClusters)
-            return true;
-        else return false;
+        return clusters.size() <= totalNumClusters;
     }
 
     static double calcManhD(double[] centroid1, List<List<Double>> allFrequencies, int i)
@@ -573,404 +678,5 @@ public class Main
                 + Math.abs((centroid1[2] - allFrequencies.get(i).get(2)))
                 + Math.abs((centroid1[3] - allFrequencies.get(i).get(3)))
                 + Math.abs((centroid1[4] - allFrequencies.get(i).get(4))));
-    }
-
-    // clustering alorithms with euclidean distance
-    /*
-    static void kMeansCluster (double[] centroid1, double[] centroid2, List<List<Double>> allFrequencies,
-                               List<String> nameSongs)
-    {
-        ArrayList<String> cluster1 = new ArrayList<>();
-        ArrayList<String> cluster2 = new ArrayList<>();
-        // What should be max value for iterations ?
-        int counter = 0, maxIterations = 20;
-
-        // for loop to check in which cluster each point goes
-        // calculate distance from both centroids, go to the closest one
-        // recalculate centroids and distances until the points are basically equally divided
-        boolean proceed = true;
-        double d1, d2;
-
-        double sumXc1;
-        double sumYc1;
-
-        double sumXc2;
-        double sumYc2;
-
-        while (proceed)
-        {
-            for (int i = 0; i < allFrequencies.size(); i++)
-            {
-                d1 = Math.sqrt(Math.pow((centroid1[0] - allFrequencies.get(i).get(0)), 2) + Math.pow((centroid1[1] - allFrequencies.get(i).get(1)), 2));
-                d2 = Math.sqrt(Math.pow((centroid2[0] - allFrequencies.get(i).get(0)), 2) + Math.pow((centroid2[1] - allFrequencies.get(i).get(1)), 2));
-
-
-                if (d1 < d2)
-                {
-                    cluster1.add(nameSongs.get(i));
-                }
-                else
-                {
-                    cluster2.add(nameSongs.get(i));
-                }
-            }
-
-            double half = allFrequencies.size() / 2.0;
-            if (cluster1.size() == Math.floor(half) || cluster1.size() == Math.ceil(half)
-                    || counter > maxIterations)
-                proceed = false;
-
-
-            else
-            {
-                counter++;
-                sumXc1 = 0;
-                sumYc1 = 0;
-                sumXc2 = 0;
-                sumYc2 = 0;
-                //recalculate centroids
-                for (String key1 : cluster1)
-                {
-                    for (int l = 0; l < nameSongs.size(); l++)
-                    {
-                        if (key1.equals(nameSongs.get(l)))
-                        {
-                            sumXc1 = sumXc1 + allFrequencies.get(l).get(0);
-                            sumYc1 = sumYc1 + allFrequencies.get(l).get(1);
-                        }
-                    }
-                }
-
-                if (!cluster1.isEmpty())
-                {
-                    centroid1[0] = sumXc1 / cluster1.size();
-                    centroid1[1] = sumYc1 / cluster1.size();
-                }
-
-
-                for (String key2 : cluster2)
-                {
-                    for (int l = 0; l < nameSongs.size(); l++)
-                    {
-                        if (key2.equals(nameSongs.get(l)))
-                        {
-                            sumXc2 = sumXc2 + allFrequencies.get(l).get(0);
-                            sumYc2 = sumYc2 + allFrequencies.get(l).get(1);
-                        }
-                    }
-                }
-
-                if (!cluster2.isEmpty())
-                {
-                    centroid2[0] = sumXc2 / cluster2.size();
-                    centroid2[1] = sumYc2 / cluster2.size();
-                }
-
-                cluster1.clear();
-                cluster2.clear();
-            }
-        }
-
-        for (String c : cluster1)
-        {
-            System.out.print(c + ", ");
-        }
-        System.out.println();
-        for (String q : cluster2)
-        {
-            System.out.print(q + ", ");
-        }
-        System.out.println();
-    }
-
-
-    static void hierarchicalClustering(List<List<Double>> allFrequencies, List<String> nameSongs)
-    {
-        // choose a better number for smallestDistance
-        double sumX, sumY, smallestDistance;
-        int indexSong, index2 = 0, k;
-        // What should be max value for iterations ?
-        int counter = 0, maxIterations = 600;
-
-        List<List<Double>> distance = new ArrayList<>();
-        for (int i = 0; i < allFrequencies.size(); i++)
-        {
-            List<Double> d = new ArrayList<>();
-            for (int j = 0; j < allFrequencies.size(); j++)
-                d.add(0.0);
-            distance.add(d);
-        }
-
-        List<List<Double>> centroids = new ArrayList<>();
-        for (List<Double> song : allFrequencies)
-        {
-            List<Double> c = new ArrayList<>();
-            c.add(song.get(0));
-            c.add(song.get(1));
-            centroids.add(c);
-        }
-
-        //creating clusters, one for each data point
-        List<List<String>> clusters = new ArrayList<>();
-        for (int i = 0; i < allFrequencies.size(); i++)
-        {
-            List<String> cluster = new ArrayList<>();
-            cluster.add(nameSongs.get(i));
-            clusters.add(cluster);
-        }
-
-        //calculating proximity matrix - OK
-        for (int i = 0; i < centroids.size(); i++)
-        {
-            for (int j = 0; j < centroids.size(); j++)
-            {
-                distance.get(i).set(j, Math.sqrt(
-                        Math.pow((centroids.get(i).get(0) - centroids.get(j).get(0)), 2) +
-                                Math.pow((centroids.get(i).get(1) - centroids.get(j).get(1)), 2)));
-            }
-        }
-
-        while (clusters.size() > 2 && counter < maxIterations)
-        {
-            counter++;
-            for (int i = 0; i < clusters.size(); i++)
-            {
-                smallestDistance = 100000000;
-                for (int j = 0; j < clusters.size(); j++)
-                {
-                    if (distance.get(i).get(j) < smallestDistance && distance.get(i).get(j) != 0)
-                    {
-                        smallestDistance = distance.get(i).get(j);
-                        index2 = j;
-                    }
-                }
-
-                if (!search(clusters.get(i), nameSongs.get(i)))
-                    clusters.get(i).add(nameSongs.get(i));
-
-                if (!search(clusters.get(i), nameSongs.get(index2)))
-                    clusters.get(i).add(nameSongs.get(index2));
-
-                // delete repeated elements in other clusters
-                k = 0;
-                while (k < clusters.size())
-                {
-                    if (k != i)
-                    {
-                        if (search(clusters.get(k), nameSongs.get(i)))
-                            clusters.get(k).remove(nameSongs.get(i));
-
-                        if (search(clusters.get(k), nameSongs.get(index2)))
-                            clusters.get(k).remove(nameSongs.get(index2));
-                    }
-                    k++;
-                }
-
-                //go through each cluster, if empty, delete it
-                for (int j = 0; j < clusters.size(); j++)
-                {
-                    if (clusters.get(j).isEmpty())
-                        clusters.remove(j);
-                }
-
-                // clearing distance list to update it
-                for (List<Double> doubles : distance) doubles.clear();
-
-                // now i gotta calculate the centroid of each new cluster - OK
-                for (int j = 0; j < clusters.size(); j++)
-                {
-                    sumX = 0;
-                    sumY = 0;
-                    for (String s : clusters.get(j))
-                    {
-                        indexSong = nameSongs.indexOf(s);
-                        sumX = sumX + allFrequencies.get(indexSong).get(0);
-                        sumY = sumY + allFrequencies.get(indexSong).get(1);
-                    }
-                    sumX = sumX / clusters.get(j).size();
-                    sumY = sumY / clusters.get(j).size();
-
-                    // what's going on here?!!!
-                    centroids.get(j).add(sumX);
-                    centroids.get(j).add(sumY);
-                }
-
-                // now I need to calculate the distance between the centroids and join more clusters
-                // loop starts againnn
-                for (int p = 0; p < centroids.size(); p++)
-                {
-                    for (int j = 0; j < centroids.size(); j++)
-                    {
-                        distance.get(p).add(j, Math.sqrt(
-                                Math.pow((centroids.get(p).get(0) - centroids.get(j).get(0)), 2) +
-                                        Math.pow((centroids.get(p).get(1) - centroids.get(j).get(1)), 2)));
-                    }
-                }
-            }
-        }
-
-        for (List c : clusters)
-            System.out.print(c);
-        System.out.println();
-    }
-     */
-
-    // K-MEANS WITH 3 CLUSTERS FIX THIS
-    static void k3MeansClusterManhattanD(double[] centroid1, double[] centroid2, double[] centroid3,
-                                         List<List<Double>> allFrequencies, List<String> nameSongs)
-    {
-        ArrayList<String> cluster1 = new ArrayList<>();
-        ArrayList<String> cluster2 = new ArrayList<>();
-        ArrayList<String> cluster3 = new ArrayList<>();
-
-        // What should be max value for iterations ?
-        int counter = 0, maxIterations = 6000;
-
-        // for loop to check in which cluster each point goes
-        // calculate distance from both centroids, go to the closest one
-        // recalculate centroids and distances until the points are basically equally divided
-        boolean proceed = true;
-        double d1, d2, d3;
-
-        double sumXc1, sumYc1, sumZc1, sumAc1, sumBc1;
-        double sumXc2, sumYc2, sumZc2, sumAc2, sumBc2;
-        double sumXc3, sumYc3, sumZc3, sumAc3, sumBc3;
-
-        while (proceed)
-        {
-            for (int i = 0; i < allFrequencies.size(); i++)
-            {
-                d1 = calcManhD(centroid1, allFrequencies, i);
-                d2 = calcManhD(centroid2, allFrequencies, i);
-                d3 = calcManhD(centroid3, allFrequencies, i);
-
-                if (d1 < d2 && d1 < d3)
-                    cluster1.add(nameSongs.get(i));
-                if (d2 < d1 && d2 < d3)
-                    cluster2.add(nameSongs.get(i));
-                if (d3 < d1 && d3 < d1)
-                    cluster3.add(nameSongs.get(i));
-            }
-
-            double third = allFrequencies.size() / 3.0;
-            if (cluster1.size() == Math.floor(third) && cluster2.size() == Math.ceil(third)
-                    || cluster1.size() == Math.ceil(third) && cluster1.size() == Math.floor(third)
-                    || counter > maxIterations)
-            {
-                proceed = false;
-            }
-            else
-            {
-                counter++;
-                sumXc1 = 0;
-                sumYc1 = 0;
-                sumZc1 = 0;
-                sumAc1 = 0;
-                sumBc1 = 0;
-                sumXc2 = 0;
-                sumYc2 = 0;
-                sumZc2 = 0;
-                sumAc2 = 0;
-                sumBc2 = 0;
-                sumXc3 = 0;
-                sumYc3 = 0;
-                sumZc3 = 0;
-                sumAc3 = 0;
-                sumBc3 = 0;
-
-                //recalculate centroids
-                for (String key1 : cluster1)
-                {
-                    for (int l = 0; l < nameSongs.size(); l++)
-                    {
-                        if (key1.equals(nameSongs.get(l)))
-                        {
-                            sumXc1 = sumXc1 + allFrequencies.get(l).get(0);
-                            sumYc1 = sumYc1 + allFrequencies.get(l).get(1);
-                            sumZc1 = sumZc1 + allFrequencies.get(l).get(2);
-                            sumAc1 = sumAc1 + allFrequencies.get(l).get(3);
-                            sumBc1 = sumBc1 + allFrequencies.get(l).get(4);
-                        }
-                    }
-                }
-
-                if (!cluster1.isEmpty())
-                {
-                    centroid1[0] = sumXc1 / cluster1.size();
-                    centroid1[1] = sumYc1 / cluster1.size();
-                    centroid1[2] = sumZc1 / cluster1.size();
-                    centroid1[3] = sumAc1 / cluster1.size();
-                    centroid1[4] = sumBc1 / cluster1.size();
-                }
-
-                for (String key2 : cluster2)
-                {
-                    for (int l = 0; l < nameSongs.size(); l++)
-                    {
-                        if (key2.equals(nameSongs.get(l)))
-                        {
-                            sumXc2 = sumXc2 + allFrequencies.get(l).get(0);
-                            sumYc2 = sumYc2 + allFrequencies.get(l).get(1);
-                            sumZc2 = sumZc2 + allFrequencies.get(l).get(2);
-                            sumAc2 = sumAc2 + allFrequencies.get(l).get(3);
-                            sumBc2 = sumBc2 + allFrequencies.get(l).get(4);
-                        }
-                    }
-                }
-
-                if (!cluster2.isEmpty())
-                {
-                    centroid2[0] = sumXc2 / cluster2.size();
-                    centroid2[1] = sumYc2 / cluster2.size();
-                    centroid2[2] = sumZc2 / cluster2.size();
-                    centroid2[3] = sumAc2 / cluster2.size();
-                    centroid2[4] = sumBc2 / cluster2.size();
-                }
-
-                for (String key3 : cluster3)
-                {
-                    for (int l = 0; l < nameSongs.size(); l++)
-                    {
-                        if (key3.equals(nameSongs.get(l)))
-                        {
-                            sumXc3 = sumXc3 + allFrequencies.get(l).get(0);
-                            sumYc3 = sumYc3 + allFrequencies.get(l).get(1);
-                            sumZc3 = sumZc3 + allFrequencies.get(l).get(2);
-                            sumAc3 = sumAc3 + allFrequencies.get(l).get(3);
-                            sumBc3 = sumBc3 + allFrequencies.get(l).get(4);
-                        }
-                    }
-                }
-
-                if (!cluster3.isEmpty())
-                {
-                    centroid2[0] = sumXc3 / cluster3.size();
-                    centroid2[1] = sumYc3 / cluster3.size();
-                    centroid2[2] = sumZc3 / cluster3.size();
-                    centroid2[3] = sumAc3 / cluster3.size();
-                    centroid2[4] = sumBc3 / cluster3.size();
-                }
-
-                cluster1.clear();
-                cluster2.clear();
-                cluster3.clear();
-            }
-        }
-
-        for (String c : cluster1)
-        {
-            System.out.print(c + ", ");
-        }
-        System.out.println();
-        for (String q : cluster2)
-        {
-            System.out.print(q + ", ");
-        }
-        System.out.println();
-        for (String q : cluster3)
-        {
-            System.out.print(q + ", ");
-        }
-        System.out.println();
     }
 }
