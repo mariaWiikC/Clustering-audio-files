@@ -58,11 +58,12 @@ public class Main
         // decide on number of clusters I will have
         int dimension = 5, k = 3;
 
-        System.out.println(checkClusters(relatedKeys,
-                kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
+        // System.out.println(checkClusters(relatedKeys,
+        //        kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
 
         // preparation for Hierarchical clustering
-        //hierarchicalClusteringManhattanD(allFrequencies, nameSongs);
+        System.out.println(checkClusters(relatedKeys,
+                hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k)));
     }
 
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
@@ -73,9 +74,11 @@ public class Main
         {
             rNumRelKey.add(new ArrayList<>());
         }
-        // keys.size is the same as the total number of clusters?
+
         for (int i = 0; i < keys.size(); i++)
         {
+            // the only problem here is that it's getting two keys from the same song and taking it as two different
+            // song keys, which might lead to a RelatedKeys row that is not the correct one
             ArrayList<String> clusterNoRep = new ArrayList<>();
             for (int j = 0; j < keys.get(i).size(); j++)
             {
@@ -372,9 +375,10 @@ public class Main
     }
 
     // i have 5 "dimensions" now, not just X and Y
-    // this is not working, I have to change, probs smt with the distance calculations
-    static ArrayList<ArrayList<ArrayList<String>>> kMeansClusterManhattanD(int dimension, List<List<Double>> allFrequencies,
-                                                                           List<String> nameSongs, int k, String[][] songKeys)
+    static ArrayList<ArrayList<ArrayList<String>>> kMeansClusterManhattanD(int dimension,
+                                                                           List<List<Double>> allFrequencies,
+                                                                           List<String> nameSongs, int k,
+                                                                           String[][] songKeys)
     {
         ArrayList<double[]> centroids = new ArrayList<>();
         for (int i = 0; i < k; i++)
@@ -485,14 +489,14 @@ public class Main
         return keys;
     }
 
-    static void hierarchicalClusteringManhattanD(List<List<Double>> allFrequencies,
-                                                 List<String> nameSongs, String[] songKeys)
+    static ArrayList<ArrayList<ArrayList<String>>> hierarchicalClusteringManhattanD(List<List<Double>> allFrequencies,
+                                                 List<String> nameSongs, String[][] songKeys, int totalNumClusters)
     {
         // choose a better number for smallestDistance
         double sumX, sumY, sumZ, sumA, sumB, smallestDistance;
         int indexSong, index2 = 0;
         // What should be max value for iterations ?
-        int counter = 0, maxIterations = 100, totalNumClusters = 2;
+        int counter = 0, maxIterations = 100;
 
         // each list inside a list corresponds to a song, the values in the list are the distance
         // to other songs
@@ -557,7 +561,6 @@ public class Main
                     }
                 }
 
-                // the problem might be that i'm moving songs, not clusters!!!!!!
                 // move an entire cluster
                 // find cluster with that has the smallest distance, pass it to the new cluster
                 // and delete it
@@ -567,47 +570,8 @@ public class Main
                 clusters.remove(index2);
                 centroids.remove(index2);
                 distance.remove(index2);
+
                 if (checkDone(clusters, totalNumClusters)) break;
-                /* OG
-                if (!search(clusters.get(i), nameSongs.get(i)))
-                    clusters.get(i).add(nameSongs.get(i));
-
-                if (!search(clusters.get(i), nameSongs.get(index2)))
-                    clusters.get(i).add(nameSongs.get(index2));
-                 */
-
-                // delete repeated elements in other clusters
-                /*
-                k = 0;
-                while (k < clusters.size())
-                {
-                    if (k != i)
-                    {
-                        if (search(clusters.get(k), nameSongs.get(i)))
-                            // changed from this: clusters.get(k).remove(nameSongs.get(i));
-                            clusters.get(k).clear();
-
-                        if (search(clusters.get(k), nameSongs.get(index2)))
-                            // changed from this: clusters.get(k).remove(nameSongs.get(index2));
-                            clusters.get(k).clear();
-                    }
-                    k++;
-                }
-
-                 */
-
-                /*
-                //go through each cluster, if empty, delete it
-                for (int j = 0; j < clusters.size(); j++)
-                {
-                    if (clusters.get(j).isEmpty())
-                    {
-                        clusters.remove(j);
-                        centroids.remove(j);
-                        distance.remove(j);
-                    }
-                }
-                 */
 
                 // clearing distance list to update it
                 for (List<Double> doubles : distance) doubles.clear();
@@ -664,6 +628,30 @@ public class Main
         for (List c : clusters)
             System.out.println(c);
         System.out.println(counter);
+
+        // creating the list used as a parameter to check "goodness" of clusters
+        ArrayList<ArrayList<ArrayList<String>>> keys = new ArrayList<>();
+        for (List<String> cluster : clusters)
+        {
+            ArrayList<ArrayList<String>> key = new ArrayList<>();
+            keys.add(key);
+            for (String c : cluster)
+            {
+                // c + " k: " +
+                int indexC = nameSongs.indexOf(c);
+                ArrayList<String> toA = new ArrayList<>();
+                key.add(toA);
+                for (int i = 0; i < songKeys[indexC].length; i++)
+                {
+                    System.out.print(songKeys[indexC][i] + ", ");
+                    toA.add(songKeys[indexC][i]);
+                }
+                System.out.print("; ");
+            }
+            System.out.println();
+        }
+
+        return keys;
     }
 
     static boolean checkDone(List<List<String>> clusters, int totalNumClusters)
