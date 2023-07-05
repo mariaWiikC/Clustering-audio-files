@@ -58,12 +58,12 @@ public class Main
         // decide on number of clusters I will have
         int dimension = 5, k = 3;
 
-        // System.out.println(checkClusters(relatedKeys,
-        //        kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
+         System.out.println(checkClusters(relatedKeys,
+                kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
 
         // preparation for Hierarchical clustering
-        System.out.println(checkClusters(relatedKeys,
-                hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k)));
+        // System.out.println(checkClusters(relatedKeys,
+           //     hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k)));
     }
 
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
@@ -131,6 +131,8 @@ public class Main
                 if (keys.get(i).get(j).size() == 2 && twoW)
                     wrong++;
             }
+            // for these calculations, I'm getting the right number of data points, but I think the calculation
+            // for the most similar row is wrong
             int total = correctCluster - wrong;
             // row of the right key group
             rNumRelKey.get(i).add(maxInd);
@@ -159,7 +161,7 @@ public class Main
     static double[] buildCentroidK(int dimension)
     {
         double[] centroid = new double[dimension];
-        int[] tens = {1000};
+        int[] tens = {100};
         for (int i = 0; i < dimension; i++)
             centroid[i] = Math.random() * getRandom(tens);
 
@@ -309,7 +311,8 @@ public class Main
     static double actualFrequency(double iMaxMod, float sampleRate, double n)
     {
         double actualFrequency = iMaxMod * sampleRate / n;
-        while (actualFrequency > 14080)
+        // previous value was to keep the big numbers, now it's to try to approximate everything
+        while (actualFrequency > 32.70)
         {
             actualFrequency = actualFrequency / 2;
         }
