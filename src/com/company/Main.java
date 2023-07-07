@@ -161,7 +161,7 @@ public class Main
     static double[] buildCentroidK(int dimension)
     {
         double[] centroid = new double[dimension];
-        int[] tens = {100};
+        int[] tens = {100, 10};
         for (int i = 0; i < dimension; i++)
             centroid[i] = Math.random() * getRandom(tens);
 
@@ -441,8 +441,17 @@ public class Main
             {
                 counter++;
                 for (ArrayList<Double> sum : sums)
+                {
+                    // I'm trying to correct empty clusters
+                    if (sum.isEmpty())
+                    {
+                        double[] newPosCentroid = buildCentroidK(dimension);
+                        for (int i = 0; i < 3; i++)
+                            sum.set(i, newPosCentroid[i]);
+                    }
                     for (int j = 0; j < dimension; j++)
                         sum.set(j, 0.0);
+                }
 
                 for (int i = 0; i < clusters.size(); i++)
                 {
