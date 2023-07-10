@@ -58,12 +58,12 @@ public class Main
         // decide on number of clusters I will have
         int dimension = 5, k = 3;
 
-         System.out.println(checkClusters(relatedKeys,
-                kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
+         // System.out.println(checkClusters(relatedKeys,
+            //    kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
 
         // preparation for Hierarchical clustering
-        // System.out.println(checkClusters(relatedKeys,
-           //     hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k)));
+        System.out.println(checkClusters(relatedKeys,
+                hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k)));
     }
 
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
@@ -525,11 +525,8 @@ public class Main
         for (List<Double> song : allFrequencies)
         {
             List<Double> c = new ArrayList<>();
-            c.add(song.get(0));
-            c.add(song.get(1));
-            c.add(song.get(2));
-            c.add(song.get(3));
-            c.add(song.get(4));
+            for (int i = 0; i < 5; i++)
+                c.add(song.get(i));
             centroids.add(c);
         }
 
@@ -578,6 +575,7 @@ public class Main
                 // and delete it
                 for (String s : clusters.get(index2))
                     clusters.get(i).add(s);
+
                 clusters.get(index2).clear();
                 clusters.remove(index2);
                 centroids.remove(index2);
@@ -591,32 +589,23 @@ public class Main
                 // now i gotta calculate the centroid of each new cluster - OK
                 for (int j = 0; j < clusters.size(); j++)
                 {
-                    sumX = 0;
-                    sumY = 0;
-                    sumZ = 0;
-                    sumA = 0;
-                    sumB = 0;
+                    ArrayList<Double> sums = new ArrayList<>();
+                    for (int k = 0; k < 5; k++)
+                        sums.add(0.0);
+
                     for (String s : clusters.get(j))
                     {
                         indexSong = nameSongs.indexOf(s);
-                        sumX = sumX + allFrequencies.get(indexSong).get(0);
-                        sumY = sumY + allFrequencies.get(indexSong).get(1);
-                        sumZ = sumZ + allFrequencies.get(indexSong).get(2);
-                        sumA = sumA + allFrequencies.get(indexSong).get(3);
-                        sumB = sumB + allFrequencies.get(indexSong).get(4);
+                        for (int k = 0; k < 5; k++)
+                            sums.set(k, (sums.get(k) + allFrequencies.get(indexSong).get(k)));
                     }
-                    sumX = sumX / clusters.get(j).size();
-                    sumY = sumY / clusters.get(j).size();
-                    sumZ = sumZ / clusters.get(j).size();
-                    sumA = sumA / clusters.get(j).size();
-                    sumB = sumB / clusters.get(j).size();
+                    for (int k = 0; k < 5; k++)
+                        sums.set(k, (sums.get(k) / clusters.get(j).size()));
 
                     // what's going on here?!!!
-                    centroids.get(j).set(0, sumX);
-                    centroids.get(j).set(1, sumY);
-                    centroids.get(j).set(2, sumZ);
-                    centroids.get(j).set(3, sumA);
-                    centroids.get(j).set(4, sumB);
+                    for (int k = 0; k < 5; k++)
+                        centroids.get(j).set(k, sums.get(k));
+
                 }
 
                 // now I need to calculate the distance between the centroids and join more clusters
