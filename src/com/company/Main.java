@@ -12,7 +12,7 @@ import java.util.*;
 
 public class Main
 {
-    // apparently i'm getting empty clusters, aaaaaaaaa, find a way to fix this?
+    // apparently i'm getting empty clusters, aaaaaaaaa, find a way to fix this? -> or is it good that i have them?
     public static void main(String[] args) throws UnsupportedAudioFileException, IOException
     {
         final File folder = new File("src/allSongs");
@@ -26,7 +26,6 @@ public class Main
                 {"D", "Em"}, {"Am", "C"}, {"C", "D"}, {"Eb"}, {"D"}, {"C", "Bb"}, {"G", "D"}, {"Ab", "Eb"},
                 {"F#m", "Em"}, {"C"}, {"C"}, {"A"}, {"D", "C"}, {"F"}, {"Fm", "Eb"}, {"A", "Bb"}};
 
-        // do I keep the subdominants? -> deleted them
         String[][] relatedKeys = {{"C", "Am", "F", "G", "Dm", "Em", "Cm"},
                 {"G", "Em", "C", "D", "Am", "Bm", "Gm"},
                 {"D", "Bm", "Cbm", "G", "A", "Em", "Fbm", "F#m", "Gbm", "Dm"},
@@ -58,8 +57,8 @@ public class Main
         // decide on number of clusters I will have
         int dimension = 5, k = 3;
 
-         // System.out.println(checkClusters(relatedKeys,
-            //    kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
+        // System.out.println(checkClusters(relatedKeys,
+        //    kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
 
         // preparation for Hierarchical clustering
         System.out.println(checkClusters(relatedKeys,
@@ -69,79 +68,111 @@ public class Main
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
                                                        ArrayList<ArrayList<ArrayList<String>>> keys)
     {
+        // maybe i should just start again with this one, it's gone kinda completely wrong :/
         ArrayList<ArrayList<Integer>> rNumRelKey = new ArrayList<>();
         for (int i = 0; i < keys.size(); i++)
         {
             rNumRelKey.add(new ArrayList<>());
         }
 
+        // one time for each cluster
         for (int i = 0; i < keys.size(); i++)
         {
             // the only problem here is that it's getting two keys from the same song and taking it as two different
             // song keys, which might lead to a RelatedKeys row that is not the correct one
-            ArrayList<String> clusterNoRep = new ArrayList<>();
+            ArrayList<ArrayList<String>> clusterNoRep = new ArrayList<>();
             for (int j = 0; j < keys.get(i).size(); j++)
             {
+                clusterNoRep.add(new ArrayList<>());
+
                 for (int l = 0; l < keys.get(i).get(j).size(); l++)
                 {
                     String toAdd = keys.get(i).get(j).get(l);
-                    if (!clusterNoRep.contains(toAdd))
-                        clusterNoRep.add(toAdd);
-                }
-            }
-
-            // check which row from related keys is the most similar
-            ArrayList<Integer> similarityCounter = new ArrayList<>();
-            for (int r = 0; r < relatedKeys.length; r++)
-            {
-                int numSimilar = 0;
-                for (int c = 0; c < relatedKeys[r].length; c++)
-                {
-                    if (clusterNoRep.contains(relatedKeys[r][c]))
-                        numSimilar++;
-                }
-                similarityCounter.add(numSimilar);
-            }
-            // what if there is more than one row with the same number of similarities? -> then ig it doesn't matter?
-            // because I get the same result?
-            int maxInd = findIndMaxValue(similarityCounter);
-
-
-            // go through the keys of the cluster I'm at, if the row contains the key, 1 right, if not, 1 wrong.
-            int correctCluster = 0, wrong = 0;
-            for (int j = 0; j < keys.get(i).size(); j++)
-            {
-                boolean oneW = false, twoW = false;
-                for (int l = 0; l < keys.get(i).get(j).size(); l++)
-                {
-                    // search in the row
-                    // I'll just try to find a previous version where this was working, everything will be ok
-                    for (int c = 0; c < relatedKeys[maxInd].length; c++)
-                    {
-                        if (keys.get(i).get(j).get(l).equals(relatedKeys[maxInd][c]))
+                    boolean keyNotRepeated = true;
+                    for (ArrayList<String> strings : clusterNoRep)
+                        if (strings.contains(toAdd))
                         {
-                            correctCluster++;
-                            if (oneW)
-                                twoW = true;
-                            else
-                                oneW = true;
+                            keyNotRepeated = false;
+                            break;
                         }
-                    }
+                    if (keyNotRepeated)
+                        clusterNoRep.get(j).add(toAdd);
                 }
-                if (keys.get(i).get(j).size() == 2 && twoW)
-                    wrong++;
             }
-            // for these calculations, I'm getting the right number of data points, but I think the calculation
-            // for the most similar row is wrong
-            int total = correctCluster - wrong;
-            // row of the right key group
-            rNumRelKey.get(i).add(maxInd);
-            // points in the right cluster
-            rNumRelKey.get(i).add(total);
-            //points in the wrong cluster -> smt wrong with this num
-            rNumRelKey.get(i).add((keys.get(i).size() - total));
+
+            // I need to find a way to have loops that check all possibilities, a BUNCH of nested loops
+            // num of loops = num of lists in list
+            ArrayList<String> resultPermutation = new ArrayList<>();
+            generatePermutations(clusterNoRep, resultPermutation, 0, "");
+            // now I'm gonna divide the permutations, put them in the similarity counter. The one with the biggest num,
+            // is the one used to calculate the goodness of the cluster
+            ArrayList<ArrayList<String>> allPermutations = new ArrayList<>();
+            for (int j = 0; j < resultPermutation.size(); j++)
+            {
+                String s = resultPermutation.get(j);
+                String[] r = s.split("(?=\\p{Upper})");
+                ArrayList<String> rList = new ArrayList<>(Arrays.asList(r));
+                allPermutations.add(rList);
+            }
+            System.out.println(allPermutations);
+
+            ArrayList<ArrayList<Integer>> similarityCounter = new ArrayList<>();
+            for (int a = 0; a < allPermutations.size(); a++)
+            {
+                ArrayList Add = new ArrayList<>();
+                for (int r = 0; r < relatedKeys.length; r++)
+                {
+                    int numSimilar = 0;
+                    for (int c = 0; c < relatedKeys[r].length; c++)
+                    {
+                        if (allPermutations.get(a).contains(relatedKeys[r][c]))
+                            numSimilar++;
+                    }
+                    Add.add(numSimilar);
+                }
+                similarityCounter.add(Add);
+            }
+            System.out.println(similarityCounter);
+
+            ArrayList<ArrayList<Integer>> maxIAndV = new ArrayList<>();
+            for (int a = 0; a < allPermutations.size(); a++)
+            {
+                ArrayList toAdd = new ArrayList();
+                int maxInd = findIndMaxValue(similarityCounter.get(a));
+                int maxVal = similarityCounter.get(a).get(maxInd);
+                toAdd.add(maxInd); toAdd.add(maxVal);
+                maxIAndV.add(toAdd);
+            }
+            System.out.println(maxIAndV);
+
+            // determine largest similarity
+            int largestInd = 0, largestV = 0;
+            for (int a = 0; a < maxIAndV.size(); a++)
+            {
+                int current = maxIAndV.get(a).get(1);
+                if (current > largestV)
+                {
+                    largestV = current;
+                    largestInd = maxIAndV.get(a).get(0);
+                }
+            }
+            // now I need to compare the cluster with the chosen key row = largestInd!!! I CAN DO THIS
+
         }
         return rNumRelKey;
+    }
+
+    // got this idea from a website, how do I cite it?
+    static void generatePermutations(ArrayList<ArrayList<String>> lists, ArrayList<String> result, int depth, String current)
+    {
+        if (depth == lists.size())
+        {
+            result.add(current);
+            return;
+        }
+
+        for (int i = 0; i < lists.get(depth).size(); i++)
+            generatePermutations(lists, result, depth + 1, current + lists.get(depth).get(i));
     }
 
     static int findIndMaxValue(ArrayList<Integer> arr)
@@ -502,7 +533,7 @@ public class Main
     }
 
     static ArrayList<ArrayList<ArrayList<String>>> hierarchicalClusteringManhattanD(List<List<Double>> allFrequencies,
-                                                 List<String> nameSongs, String[][] songKeys, int totalNumClusters)
+                                                                                    List<String> nameSongs, String[][] songKeys, int totalNumClusters)
     {
         // choose a better number for smallestDistance
         double sumX, sumY, sumZ, sumA, sumB, smallestDistance;
