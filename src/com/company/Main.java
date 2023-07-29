@@ -57,12 +57,19 @@ public class Main
         // decide on number of clusters I will have
         int dimension = 5, k = 3;
 
+        // timer setup
+        long start = System.nanoTime();
+
         // System.out.println(checkClusters(relatedKeys,
         //    kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
 
         // preparation for Hierarchical clustering
         System.out.println(checkClusters(relatedKeys,
                 hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k)));
+
+        // end timer
+        long end = System.nanoTime();
+        System.out.println("Time taken for the clustering algorithm to run: " + (end - start) + " nano seconds");
     }
 
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
@@ -114,7 +121,7 @@ public class Main
                 ArrayList<String> rList = new ArrayList<>(Arrays.asList(r));
                 allPermutations.add(rList);
             }
-            System.out.println(allPermutations);
+            // System.out.println(allPermutations);
 
             ArrayList<ArrayList<Integer>> similarityCounter = new ArrayList<>();
             for (int a = 0; a < allPermutations.size(); a++)
@@ -132,7 +139,7 @@ public class Main
                 }
                 similarityCounter.add(Add);
             }
-            System.out.println(similarityCounter);
+            // System.out.println(similarityCounter);
 
             ArrayList<ArrayList<Integer>> maxIAndV = new ArrayList<>();
             for (int a = 0; a < allPermutations.size(); a++)
@@ -143,7 +150,7 @@ public class Main
                 toAdd.add(maxInd); toAdd.add(maxVal);
                 maxIAndV.add(toAdd);
             }
-            System.out.println(maxIAndV);
+            // System.out.println(maxIAndV);
 
             // determine largest similarity
             int largestInd = 0, largestV = 0;
@@ -153,11 +160,37 @@ public class Main
                 if (current > largestV)
                 {
                     largestV = current;
-                    largestInd = maxIAndV.get(a).get(0);
+                    largestInd = maxIAndV.get(a).get(0); // row with largest similarity
                 }
             }
-            // now I need to compare the cluster with the chosen key row = largestInd!!! I CAN DO THIS
+            System.out.println(largestInd);
 
+            // now I need to compare the cluster with the chosen key row = largestInd!!! I CAN DO THIS
+            int same = 0, notSame = 0, total = keys.get(i).size();
+            boolean changed = false;
+            for (int j = 0; j < total; j++)
+            {
+                ArrayList current = keys.get(i).get(j);
+                for (int l = 0; l < current.size(); l++)
+                {
+                    for (String s : relatedKeys[largestInd])
+                    {
+                        if (current.get(l).equals(s))
+                        {
+                            changed = true;
+                            same++;
+                            break;
+                        }
+                    }
+                    if (changed)
+                        break;
+                }
+            }
+            notSame = total - same;
+            rNumRelKey.get(i).add(total);
+            rNumRelKey.get(i).add(same);
+            rNumRelKey.get(i).add(notSame);
+            // SHOULD I GET THE FINAL THING IN PERCENTAGE?
         }
         return rNumRelKey;
     }
