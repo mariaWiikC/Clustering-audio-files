@@ -22,11 +22,16 @@ public class Main
         List<String> nameSongs = new ArrayList<>();
         AudioInputStream audioInputStream;
 
+        // preparation for K-means clustering
+        // decide on number of clusters I will have
+        int dimension = 5, k = 4;
+
         String[][] songKeys = {{"A#", "Gm"}, {"E"}, {"Ab"}, {"Cm", "F"}, {"Am"}, {"E"}, {"C", "F"}, {"A", "Fm"},
                 {"D", "Em"}, {"Am", "C"}, {"C", "D"}, {"Eb"}, {"D"}, {"C", "Bb"}, {"G", "D"}, {"Ab", "Eb"},
                 {"F#m", "Em"}, {"C"}, {"C"}, {"A"}, {"D", "C"}, {"F"}, {"Fm", "Eb"}, {"A", "Bb"}};
 
-        String[][] relatedKeys = {{"C", "Am", "F", "G", "Dm", "Em", "Cm"},
+        String[][] relatedKeys =
+                {{"C", "Am", "F", "G", "Dm", "Em", "Cm"},
                 {"G", "Em", "C", "D", "Am", "Bm", "Gm"},
                 {"D", "Bm", "Cbm", "G", "A", "Em", "Fbm", "F#m", "Gbm", "Dm"},
                 {"A", "F#m", "Gbm", "D", "E", "Fb", "Bm", "Cbm", "C#m", "Dbm", "Am"},
@@ -39,43 +44,87 @@ public class Main
                 {"A#", "Bb", "Gm", "D#", "Eb", "E#", "F", "B#m", "Cm", "Dm", "A#m", "Bbm"},
                 {"F", "Dm", "Bb", "C", "Gm", "Am", "Fm"}};
 
+        // tried putting frequencies in an array so it doesn't take 15 min to run -> using this to make sure
+        // checkClusters is working
+
+        double[][] allFREQUENCIES = {{7458.563232421875, 3804.6478271484375, 7419.5343017578125, 6653.759765625, 4342.9779052734375},
+                {7841.450500488281, 4279.387664794922, 4932.4493408203125, 7777.5238037109375, 7136.238098144531},
+                {4517.9351806640625, 1775.1434326171875, 5068.714141845703, 5195.894622802734, 5049.199676513672},
+                {7064.2364501953125, 4555.6182861328125, 2067.1875, 5998.3428955078125, 4012.914276123047},
+                {4189.5538330078125, 2166.778564453125, 2123.712158203125, 3003.8818359375, 5987.5762939453125},
+                {4363.838195800781, 4594.647216796875, 2059.112548828125, 4997.721862792969, 5688.8031005859375},
+                {3492.4163818359375, 7811.842346191406, 2569.1802978515625, 5012.862396240234, 4204.694366455078},
+                {7276.8768310546875, 5663.232421875, 2063.1500244140625, 4620.2178955078125, 7429.627990722656},
+                {4729.902648925781, 6951.1871337890625, 7626.7913818359375, 5525.958251953125, 4007.1945190429688},
+                {36.3372802734375, 5489.6209716796875, 5490.966796875, 5503.0792236328125, 5533.360290527344},
+                {5436.460876464844, 5274.2889404296875, 6029.969787597656, 1466.949462890625, 4462.75634765625},
+                {6836.7919921875, 3959.417724609375, 4577.824401855469, 3969.1749572753906, 4434.830474853516},
+                {5070.059967041016, 4529.038238525391, 4052.6161193847656, 4383.3526611328125, 3213.83056640625},
+                {6267.5079345703125, 3859.82666015625, 3312.0758056640625, 3289.19677734375, 6391.996765136719},
+                {6358.351135253906, 4666.648864746094, 487.188720703125, 4730.5755615234375, 6294.4244384765625},
+                {5192.193603515625, 7190.071105957031, 5690.821838378906, 6618.095397949219, 4406.904602050781},
+                {131.890869140625, 5479.527282714844, 191.107177734375, 5464.723205566406, 196.490478515625},
+                {5387.3382568359375, 4818.05419921875, 5688.8031005859375, 5217.7642822265625, 4700.294494628906},
+                {4670.013427734375, 7075.0030517578125, 7614.006042480469, 4201.666259765625, 7305.13916015625},
+                {6018.5302734375, 4007.867431640625, 1329.67529296875, 4263.57421875, 5638.334655761719},
+                {5248.71826171875, 5517.88330078125, 1827.630615234375, 4580.516052246094, 4123.271942138672},
+                {6979.449462890625, 4077.850341796875, 4501.7852783203125, 5198.249816894531, 7535.2752685546875},
+                {1238.1591796875, 5474.143981933594, 5537.397766113281, 5487.602233886719, 559.86328125},
+                {5551.5289306640625, 6294.4244384765625, 4839.58740234375, 4124.617767333984, 5832.806396484375}};
+
+       for(int i = 0; i < allFREQUENCIES.length; i++)
+       {
+           List<Double> toAdd = new ArrayList<>();
+           for (int j = 0; j < dimension; j++)
+               toAdd.add(0.0);
+           allFrequencies.add(toAdd);
+       }
+
+       // now traverse the array adding each thing to the list
+
+        for (int i = 0; i < allFREQUENCIES.length; i++)
+        {
+            for (int j = 0; j < dimension; j++)
+            {
+                allFrequencies.get(i).set(j, allFREQUENCIES[i][j]);
+            }
+        }
+
         // for when I'm testing individual files
         /*
         audioInputStream = AudioSystem.getAudioInputStream(new File(("src/allSongs/middle-c.wav")));
         findFrequencies(audioInputStream, allFrequencies);
          */
 
+
+        // I don't run the entire loop block if I have the array into list with all the frequencies
+
         // FFT-ing all the songs
         for (File file : songList)
         {
+            /*
             audioInputStream = AudioSystem.getAudioInputStream(file);
             if (findFrequencies(audioInputStream, allFrequencies))
+
+             */
                 nameSongs.add(file.getName());
         }
 
-        // preparation for K-means clustering
-        // decide on number of clusters I will have
-        int dimension = 5, k = 3;
 
-        // timer setup
-        long start = System.nanoTime();
+
 
         // System.out.println(checkClusters(relatedKeys,
-        //    kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
+           // kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
 
         // preparation for Hierarchical clustering
         System.out.println(checkClusters(relatedKeys,
-                hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k)));
-
-        // end timer
-        long end = System.nanoTime();
-        System.out.println("Time taken for the clustering algorithm to run: " + (end - start) + " nano seconds");
+                hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
     }
 
+    // apparently this is not working, yay. Look into this asap
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
                                                        ArrayList<ArrayList<ArrayList<String>>> keys)
     {
-        // maybe i should just start again with this one, it's gone kinda completely wrong :/
         ArrayList<ArrayList<Integer>> rNumRelKey = new ArrayList<>();
         for (int i = 0; i < keys.size(); i++)
         {
@@ -163,13 +212,18 @@ public class Main
                     largestInd = maxIAndV.get(a).get(0); // row with largest similarity
                 }
             }
-            System.out.println(largestInd);
+            // System.out.println(largestInd);
 
             // now I need to compare the cluster with the chosen key row = largestInd!!! I CAN DO THIS
+            // i think the problem might be that I'm using the permutations to calculate which row from
+            // RelatedKeys would be the best, but then I'm not using it to calculate the number of data points
+            // in the right cluster... This way it's always getting the first key (if it fits) and it's like my
+            // calculations don't matter
+            // or is it? cause i'm using the row with the most similarities, so it should work either way...
             int same = 0, notSame = 0, total = keys.get(i).size();
-            boolean changed = false;
             for (int j = 0; j < total; j++)
             {
+                boolean changed = false;
                 ArrayList current = keys.get(i).get(j);
                 for (int l = 0; l < current.size(); l++)
                 {
@@ -190,7 +244,7 @@ public class Main
             rNumRelKey.get(i).add(total);
             rNumRelKey.get(i).add(same);
             rNumRelKey.get(i).add(notSame);
-            // SHOULD I GET THE FINAL THING IN PERCENTAGE?
+            // SHOULD I GET THE FINAL THING IN PERCENTAGE? I guess, yeah
         }
         return rNumRelKey;
     }
@@ -238,7 +292,7 @@ public class Main
         float sampleRate = audioFormat.getSampleRate();
         // WHAT NUMBER DO I USE FOR n -> justify!!!!!!!!! - i think it has to be a power of 2?
         // this is the num of samples i collect per second? too small, increase
-        int n = 8192;
+        int n = 32768;
         byte[] array = new byte[n];
 
         int sample = audioInputStream.read(array);
@@ -366,6 +420,7 @@ public class Main
             fToAdd.add(actualFrequency6);
 
             allFrequencies.add(fToAdd);
+            System.out.println(fToAdd);
             return true;
         }
         else
@@ -376,10 +431,15 @@ public class Main
     {
         double actualFrequency = iMaxMod * sampleRate / n;
         // previous value was to keep the big numbers, now it's to try to approximate everything
-        while (actualFrequency > 32.70)
+        // or are the values going to be too close to each other? I need to solve this
+        // test without dividing -> 21 thousand??? Not delicious, maybe i should really divide just to 7904
+        // or 4186? highest note on a piano
+
+        while (actualFrequency > 4187)
         {
             actualFrequency = actualFrequency / 2;
         }
+
         return actualFrequency;
     }
 
@@ -447,6 +507,9 @@ public class Main
                                                                            List<String> nameSongs, int k,
                                                                            String[][] songKeys)
     {
+        // timer setup
+        long start = System.nanoTime();
+
         ArrayList<double[]> centroids = new ArrayList<>();
         for (int i = 0; i < k; i++)
             centroids.add(buildCentroidK(dimension));
@@ -465,7 +528,7 @@ public class Main
         System.out.println();
 
         // What should be max value for iterations ?
-        int counter = 0, maxIterations = 1000;
+        int counter = 0, maxIterations = 1010;
 
         // for loop to check in which cluster each point goes
         // calculate distance from both centroids, go to the closest one
@@ -561,13 +624,20 @@ public class Main
             }
             System.out.println();
         }
+        long end = System.nanoTime();
+        System.out.println("Time taken for the clustering algorithm to run: " + (end - start) + " nano seconds");
 
         return keys;
     }
 
     static ArrayList<ArrayList<ArrayList<String>>> hierarchicalClusteringManhattanD(List<List<Double>> allFrequencies,
-                                                                                    List<String> nameSongs, String[][] songKeys, int totalNumClusters)
+                                                                                    List<String> nameSongs,
+                                                                                    String[][] songKeys,
+                                                                                    int totalNumClusters, int dimension)
     {
+        // timer setup
+        long start = System.nanoTime();
+
         // choose a better number for smallestDistance
         double sumX, sumY, sumZ, sumA, sumB, smallestDistance;
         int indexSong, index2 = 0;
@@ -645,6 +715,9 @@ public class Main
                 centroids.remove(index2);
                 distance.remove(index2);
 
+                // printing clusters before checking if it's done, so I can draw the histogram.
+                // System.out.println(clusters);
+
                 if (checkDone(clusters, totalNumClusters)) break;
 
                 // clearing distance list to update it
@@ -654,20 +727,20 @@ public class Main
                 for (int j = 0; j < clusters.size(); j++)
                 {
                     ArrayList<Double> sums = new ArrayList<>();
-                    for (int k = 0; k < 5; k++)
+                    for (int k = 0; k < dimension; k++)
                         sums.add(0.0);
 
                     for (String s : clusters.get(j))
                     {
                         indexSong = nameSongs.indexOf(s);
-                        for (int k = 0; k < 5; k++)
+                        for (int k = 0; k < dimension; k++)
                             sums.set(k, (sums.get(k) + allFrequencies.get(indexSong).get(k)));
                     }
-                    for (int k = 0; k < 5; k++)
+                    for (int k = 0; k < dimension; k++)
                         sums.set(k, (sums.get(k) / clusters.get(j).size()));
 
                     // what's going on here?!!!
-                    for (int k = 0; k < 5; k++)
+                    for (int k = 0; k < dimension; k++)
                         centroids.get(j).set(k, sums.get(k));
 
                 }
@@ -692,7 +765,9 @@ public class Main
 
         for (List c : clusters)
             System.out.println(c);
-        System.out.println(counter);
+
+        // why am I printing the number of iterations?
+        // System.out.println(counter);
 
         // creating the list used as a parameter to check "goodness" of clusters
         ArrayList<ArrayList<ArrayList<String>>> keys = new ArrayList<>();
@@ -715,6 +790,8 @@ public class Main
             }
             System.out.println();
         }
+        long end = System.nanoTime();
+        System.out.println("Time taken for the clustering algorithm to run: " + (end - start) + " nano seconds");
 
         return keys;
     }
