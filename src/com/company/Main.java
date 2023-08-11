@@ -15,7 +15,7 @@ public class Main
     // apparently i'm getting empty clusters, aaaaaaaaa, find a way to fix this? -> or is it good that i have them?
     public static void main(String[] args) throws UnsupportedAudioFileException, IOException
     {
-        final File folder = new File("src/allSongs");
+        final File folder = new File("src/songsLowerSR");
         final List<File> songList = Arrays.asList(folder.listFiles());
 
         List<List<Double>> allFrequencies = new ArrayList<>();
@@ -44,34 +44,9 @@ public class Main
                 {"A#", "Bb", "Gm", "D#", "Eb", "E#", "F", "B#m", "Cm", "Dm", "A#m", "Bbm"},
                 {"F", "Dm", "Bb", "C", "Gm", "Am", "Fm"}};
 
-        // tried putting frequencies in an array so it doesn't take 15 min to run -> using this to make sure
-        // checkClusters is working
-
-        double[][] allFREQUENCIES = {{7458.563232421875, 3804.6478271484375, 7419.5343017578125, 6653.759765625, 4342.9779052734375},
-                {7841.450500488281, 4279.387664794922, 4932.4493408203125, 7777.5238037109375, 7136.238098144531},
-                {4517.9351806640625, 1775.1434326171875, 5068.714141845703, 5195.894622802734, 5049.199676513672},
-                {7064.2364501953125, 4555.6182861328125, 2067.1875, 5998.3428955078125, 4012.914276123047},
-                {4189.5538330078125, 2166.778564453125, 2123.712158203125, 3003.8818359375, 5987.5762939453125},
-                {4363.838195800781, 4594.647216796875, 2059.112548828125, 4997.721862792969, 5688.8031005859375},
-                {3492.4163818359375, 7811.842346191406, 2569.1802978515625, 5012.862396240234, 4204.694366455078},
-                {7276.8768310546875, 5663.232421875, 2063.1500244140625, 4620.2178955078125, 7429.627990722656},
-                {4729.902648925781, 6951.1871337890625, 7626.7913818359375, 5525.958251953125, 4007.1945190429688},
-                {36.3372802734375, 5489.6209716796875, 5490.966796875, 5503.0792236328125, 5533.360290527344},
-                {5436.460876464844, 5274.2889404296875, 6029.969787597656, 1466.949462890625, 4462.75634765625},
-                {6836.7919921875, 3959.417724609375, 4577.824401855469, 3969.1749572753906, 4434.830474853516},
-                {5070.059967041016, 4529.038238525391, 4052.6161193847656, 4383.3526611328125, 3213.83056640625},
-                {6267.5079345703125, 3859.82666015625, 3312.0758056640625, 3289.19677734375, 6391.996765136719},
-                {6358.351135253906, 4666.648864746094, 487.188720703125, 4730.5755615234375, 6294.4244384765625},
-                {5192.193603515625, 7190.071105957031, 5690.821838378906, 6618.095397949219, 4406.904602050781},
-                {131.890869140625, 5479.527282714844, 191.107177734375, 5464.723205566406, 196.490478515625},
-                {5387.3382568359375, 4818.05419921875, 5688.8031005859375, 5217.7642822265625, 4700.294494628906},
-                {4670.013427734375, 7075.0030517578125, 7614.006042480469, 4201.666259765625, 7305.13916015625},
-                {6018.5302734375, 4007.867431640625, 1329.67529296875, 4263.57421875, 5638.334655761719},
-                {5248.71826171875, 5517.88330078125, 1827.630615234375, 4580.516052246094, 4123.271942138672},
-                {6979.449462890625, 4077.850341796875, 4501.7852783203125, 5198.249816894531, 7535.2752685546875},
-                {1238.1591796875, 5474.143981933594, 5537.397766113281, 5487.602233886719, 559.86328125},
-                {5551.5289306640625, 6294.4244384765625, 4839.58740234375, 4124.617767333984, 5832.806396484375}};
-
+        // this is from when I'm using the frequency array -> soon i'm not gonna need it cause i'm
+        // gonna have a file
+        /*
        for(int i = 0; i < allFREQUENCIES.length; i++)
        {
            List<Double> toAdd = new ArrayList<>();
@@ -90,6 +65,8 @@ public class Main
             }
         }
 
+         */
+
         // for when I'm testing individual files
         /*
         audioInputStream = AudioSystem.getAudioInputStream(new File(("src/allSongs/middle-c.wav")));
@@ -102,16 +79,10 @@ public class Main
         // FFT-ing all the songs
         for (File file : songList)
         {
-            /*
             audioInputStream = AudioSystem.getAudioInputStream(file);
             if (findFrequencies(audioInputStream, allFrequencies))
-
-             */
                 nameSongs.add(file.getName());
         }
-
-
-
 
         // System.out.println(checkClusters(relatedKeys,
            // kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
@@ -159,6 +130,8 @@ public class Main
             // I need to find a way to have loops that check all possibilities, a BUNCH of nested loops
             // num of loops = num of lists in list
             ArrayList<String> resultPermutation = new ArrayList<>();
+            // the problem is not in the next for-loop, it's here -> the output I'm getting is a resultPermutation
+            // with size = 0
             generatePermutations(clusterNoRep, resultPermutation, 0, "");
             // now I'm gonna divide the permutations, put them in the similarity counter. The one with the biggest num,
             // is the one used to calculate the goodness of the cluster
@@ -290,9 +263,10 @@ public class Main
     {
         AudioFormat audioFormat = audioInputStream.getFormat();
         float sampleRate = audioFormat.getSampleRate();
-        // WHAT NUMBER DO I USE FOR n -> justify!!!!!!!!! - i think it has to be a power of 2?
+        // WHAT NUMBER DO I USE FOR n -> justify!!!!!!!!! - i think it has to be a power of 2? now 2^14
         // this is the num of samples i collect per second? too small, increase
-        int n = 32768;
+        // the number of samples I collect per second is the sample rate divided by n -> smt like this
+        int n = 16384;
         byte[] array = new byte[n];
 
         int sample = audioInputStream.read(array);
@@ -394,23 +368,12 @@ public class Main
             List<Double> fToAdd = new ArrayList<>();
             // System.out.println(iMaxMod2 + ", " + iMaxMod3 + ", " + iMaxMod4 + ", " + iMaxMod5);
 
-            double actualFrequency = actualFrequency(iMaxMod, sampleRate, n);
+            // double actualFrequency = actualFrequency(iMaxMod, sampleRate, n);
             double actualFrequency2 = actualFrequency(iMaxMod2, sampleRate, n);
             double actualFrequency3 = actualFrequency(iMaxMod3, sampleRate, n);
             double actualFrequency4 = actualFrequency(iMaxMod4, sampleRate, n);
             double actualFrequency5 = actualFrequency(iMaxMod5, sampleRate, n);
             double actualFrequency6 = actualFrequency(iMaxMod6, sampleRate, n);
-
-            // printing the frequencies just to check, with songs I know
-
-            // System.out.println(actualFrequency);
-            /*
-            System.out.println(actualFrequency2);
-            System.out.println(actualFrequency3);
-            System.out.println(actualFrequency4);
-            System.out.println(actualFrequency5);
-            System.out.println(actualFrequency6);
-             */
 
             // add values to list so I can clusterrr
             fToAdd.add(actualFrequency2);
@@ -429,13 +392,11 @@ public class Main
 
     static double actualFrequency(double iMaxMod, float sampleRate, double n)
     {
+        // It doesn't matter that the notes are in the same octave, it's actually good, cause that's what I'm
+        // measuring. If I have in many different octaves, it might just get songs with output frequencies in the
+        // the same octave, when it has a more similar song in another octave
         double actualFrequency = iMaxMod * sampleRate / n;
-        // previous value was to keep the big numbers, now it's to try to approximate everything
-        // or are the values going to be too close to each other? I need to solve this
-        // test without dividing -> 21 thousand??? Not delicious, maybe i should really divide just to 7904
-        // or 4186? highest note on a piano
-
-        while (actualFrequency > 4187)
+        while (actualFrequency >= 880)
         {
             actualFrequency = actualFrequency / 2;
         }
