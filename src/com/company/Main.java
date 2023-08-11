@@ -4,7 +4,6 @@ import com.tambapps.fft4j.FastFouriers;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +21,14 @@ public class Main
         List<String> nameSongs = new ArrayList<>();
         AudioInputStream audioInputStream;
 
-        // preparation for K-means clustering
+        // FILE STUFF DEFINITELY NOT WORKING
+        File frequenciesFile = new File("src\\FrequenciesFile.txt");
+        if (!frequenciesFile.exists())
+            frequenciesFile.createNewFile();
+
+        Scanner scanner = new Scanner(frequenciesFile);
+
+        // preparation for clustering
         // decide on number of clusters I will have
         int dimension = 5, k = 4;
 
@@ -32,40 +38,46 @@ public class Main
 
         String[][] relatedKeys =
                 {{"C", "Am", "F", "G", "Dm", "Em", "Cm"},
-                {"G", "Em", "C", "D", "Am", "Bm", "Gm"},
-                {"D", "Bm", "Cbm", "G", "A", "Em", "Fbm", "F#m", "Gbm", "Dm"},
-                {"A", "F#m", "Gbm", "D", "E", "Fb", "Bm", "Cbm", "C#m", "Dbm", "Am"},
-                {"E", "Fb", "C#m", "Dbm", "A", "B", "Cb", "F#m", "Gbm", "G#m", "Abm", "Em", "Fbm"},
-                {"B", "Cb", "G#m", "Abm", "E", "Fb", "F#", "Gb", "C#m", "Dbm", "Dbm", "D#m", "Ebm", "Bm", "Cbm"},
-                {"F#", "Gb", "D#m", "Ebm", "B", "Cb", "C#", "Db", "G#m", "Abm", "A#m", "Bbm", "F#m", "Gbm"},
-                {"C#", "Db", "A#m", "Bbm", "F#", "Gb", "G#", "Ab", "D#m", "Ebm", "E#m", "Fm", "C#m", "Dbm"},
-                {"G#", "Ab", "E#m", "Fm", "C#", "Db", "D#", "Eb", "A#m", "Bbm", "B#m", "Cm", "G#m", "Abm"},
-                {"D#", "Eb", "B#m", "Cm", "G#", "Ab", "A#", "Bb", "E#m", "Fm", "Gm", "D#m", "Ebm"},
-                {"A#", "Bb", "Gm", "D#", "Eb", "E#", "F", "B#m", "Cm", "Dm", "A#m", "Bbm"},
-                {"F", "Dm", "Bb", "C", "Gm", "Am", "Fm"}};
+                        {"G", "Em", "C", "D", "Am", "Bm", "Gm"},
+                        {"D", "Bm", "Cbm", "G", "A", "Em", "Fbm", "F#m", "Gbm", "Dm"},
+                        {"A", "F#m", "Gbm", "D", "E", "Fb", "Bm", "Cbm", "C#m", "Dbm", "Am"},
+                        {"E", "Fb", "C#m", "Dbm", "A", "B", "Cb", "F#m", "Gbm", "G#m", "Abm", "Em", "Fbm"},
+                        {"B", "Cb", "G#m", "Abm", "E", "Fb", "F#", "Gb", "C#m", "Dbm", "Dbm", "D#m", "Ebm", "Bm", "Cbm"},
+                        {"F#", "Gb", "D#m", "Ebm", "B", "Cb", "C#", "Db", "G#m", "Abm", "A#m", "Bbm", "F#m", "Gbm"},
+                        {"C#", "Db", "A#m", "Bbm", "F#", "Gb", "G#", "Ab", "D#m", "Ebm", "E#m", "Fm", "C#m", "Dbm"},
+                        {"G#", "Ab", "E#m", "Fm", "C#", "Db", "D#", "Eb", "A#m", "Bbm", "B#m", "Cm", "G#m", "Abm"},
+                        {"D#", "Eb", "B#m", "Cm", "G#", "Ab", "A#", "Bb", "E#m", "Fm", "Gm", "D#m", "Ebm"},
+                        {"A#", "Bb", "Gm", "D#", "Eb", "E#", "F", "B#m", "Cm", "Dm", "A#m", "Bbm"},
+                        {"F", "Dm", "Bb", "C", "Gm", "Am", "Fm"}};
 
-        // this is from when I'm using the frequency array -> soon i'm not gonna need it cause i'm
-        // gonna have a file
-        /*
-       for(int i = 0; i < allFREQUENCIES.length; i++)
-       {
-           List<Double> toAdd = new ArrayList<>();
-           for (int j = 0; j < dimension; j++)
-               toAdd.add(0.0);
-           allFrequencies.add(toAdd);
-       }
-
-       // now traverse the array adding each thing to the list
-
-        for (int i = 0; i < allFREQUENCIES.length; i++)
+        // only use these 3 blocks if there is nothing written in the frequency file
+        ArrayList<String> allFREQUENCIESstring = new ArrayList<>();
+        while (scanner.hasNextLine())
         {
-            for (int j = 0; j < dimension; j++)
-            {
-                allFrequencies.get(i).set(j, allFREQUENCIES[i][j]);
-            }
+            allFREQUENCIESstring.add(scanner.nextLine());
         }
 
-         */
+        ArrayList<String[]> allFrequenciesStringArr = new ArrayList<>();
+        for (String s : allFREQUENCIESstring)
+        {
+            String[] sArray = s.split(" ");
+            allFrequenciesStringArr.add(sArray);
+        }
+
+        for (int i = 0; i < allFrequenciesStringArr.size(); i++)
+        {
+            ArrayList<Double> toAdd = new ArrayList<>();
+            for (int j = 0; j < allFrequenciesStringArr.get(i).length; j++)
+            {
+                toAdd.add(Double.parseDouble(allFrequenciesStringArr.get(i)[j]));
+            }
+            allFrequencies.add(toAdd);
+        }
+
+        for (List<Double> a : allFrequencies)
+        {
+            System.out.println(a);
+        }
 
         // for when I'm testing individual files
         /*
@@ -73,19 +85,38 @@ public class Main
         findFrequencies(audioInputStream, allFrequencies);
          */
 
+        // Don't run the following commented block of code if there is information on the allFrequenciesFile
 
-        // I don't run the entire loop block if I have the array into list with all the frequencies
 
         // FFT-ing all the songs
         for (File file : songList)
         {
-            audioInputStream = AudioSystem.getAudioInputStream(file);
-            if (findFrequencies(audioInputStream, allFrequencies))
+            //audioInputStream = AudioSystem.getAudioInputStream(file);
+            // if (findFrequencies(audioInputStream, allFrequencies))
                 nameSongs.add(file.getName());
         }
+        /*
+        try (FileWriter fw = new FileWriter(frequenciesFile.getAbsoluteFile()); BufferedWriter bw = new BufferedWriter(fw))
+        {
+            for (List<Double> list : allFrequencies)
+            {
+                for (double d : list)
+                {
+                    bw.write(String.valueOf(d));
+                    bw.write(" ");
+                }
+                bw.newLine();
+            }
+        } catch (IOException exc)
+        {
+            exc.printStackTrace();
+            System.out.println("Got exception: " + exc);
+            System.exit(1);
+        }
+         */
 
         // System.out.println(checkClusters(relatedKeys,
-           // kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
+        // kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
 
         // preparation for Hierarchical clustering
         System.out.println(checkClusters(relatedKeys,
@@ -169,7 +200,8 @@ public class Main
                 ArrayList toAdd = new ArrayList();
                 int maxInd = findIndMaxValue(similarityCounter.get(a));
                 int maxVal = similarityCounter.get(a).get(maxInd);
-                toAdd.add(maxInd); toAdd.add(maxVal);
+                toAdd.add(maxInd);
+                toAdd.add(maxVal);
                 maxIAndV.add(toAdd);
             }
             // System.out.println(maxIAndV);
@@ -395,10 +427,15 @@ public class Main
         // It doesn't matter that the notes are in the same octave, it's actually good, cause that's what I'm
         // measuring. If I have in many different octaves, it might just get songs with output frequencies in the
         // the same octave, when it has a more similar song in another octave
+        // update WORD, now I have lower and upper boundaries
         double actualFrequency = iMaxMod * sampleRate / n;
         while (actualFrequency >= 880)
         {
             actualFrequency = actualFrequency / 2;
+        }
+        while (actualFrequency < 440)
+        {
+            actualFrequency = actualFrequency * 2;
         }
 
         return actualFrequency;
