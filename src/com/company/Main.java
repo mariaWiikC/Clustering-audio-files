@@ -51,6 +51,7 @@ public class Main
                         {"F", "Dm", "Bb", "C", "Gm", "Am", "Fm"}};
 
         // only use these 3 blocks if there is nothing written in the frequency file
+        // reading file to allFrequencies ArrayList
         ArrayList<String> allFREQUENCIESstring = new ArrayList<>();
         while (scanner.hasNextLine())
         {
@@ -115,12 +116,12 @@ public class Main
         }
          */
 
-        // System.out.println(checkClusters(relatedKeys,
-        // kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
+        System.out.println(checkClusters(relatedKeys,
+                                         kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
 
         // preparation for Hierarchical clustering
-        System.out.println(checkClusters(relatedKeys,
-                hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
+        // System.out.println(checkClusters(relatedKeys,
+           //     hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
     }
 
     // apparently this is not working, yay. Look into this asap
@@ -163,9 +164,18 @@ public class Main
             ArrayList<String> resultPermutation = new ArrayList<>();
             // the problem is not in the next for-loop, it's here -> the output I'm getting is a resultPermutation
             // with size = 0
+            for (int l = 0; l < clusterNoRep.size(); l++)
+            {
+                if (clusterNoRep.get(l).isEmpty())
+                {
+                    clusterNoRep.remove(l);
+                    l--;
+                }
+            }
             generatePermutations(clusterNoRep, resultPermutation, 0, "");
             // now I'm gonna divide the permutations, put them in the similarity counter. The one with the biggest num,
             // is the one used to calculate the goodness of the cluster
+
             ArrayList<ArrayList<String>> allPermutations = new ArrayList<>();
             for (int j = 0; j < resultPermutation.size(); j++)
             {
@@ -217,7 +227,8 @@ public class Main
                     largestInd = maxIAndV.get(a).get(0); // row with largest similarity
                 }
             }
-            // System.out.println(largestInd);
+            // printing the row with largest similarity
+            System.out.println(largestInd);
 
             // now I need to compare the cluster with the chosen key row = largestInd!!! I CAN DO THIS
             // i think the problem might be that I'm using the permutations to calculate which row from
@@ -249,6 +260,9 @@ public class Main
             rNumRelKey.get(i).add(total);
             rNumRelKey.get(i).add(same);
             rNumRelKey.get(i).add(notSame);
+            // percentage calculation of similar data points in the same cluster -> must be int, but you get the point
+            int percentage = (same * 100)/total;
+            rNumRelKey.get(i).add(percentage);
             // SHOULD I GET THE FINAL THING IN PERCENTAGE? I guess, yeah
         }
         return rNumRelKey;
@@ -283,10 +297,12 @@ public class Main
 
     static double[] buildCentroidK(int dimension)
     {
+        double max = 0.880, min = 0.440;
         double[] centroid = new double[dimension];
-        int[] tens = {100, 10};
+        int[] tens = {1000};
         for (int i = 0; i < dimension; i++)
-            centroid[i] = Math.random() * getRandom(tens);
+            // this small calculation is to keep the numbers within the range of the chosen octave
+            centroid[i] = ((Math.random() * (max - min)) + min) * getRandom(tens);
 
         return centroid;
     }
