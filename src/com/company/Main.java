@@ -11,7 +11,6 @@ import java.util.*;
 
 public class Main
 {
-    // apparently i'm getting empty clusters, aaaaaaaaa, find a way to fix this? -> or is it good that i have them?
     public static void main(String[] args) throws UnsupportedAudioFileException, IOException
     {
         final File folder = new File("src/songsLowerSR");
@@ -21,7 +20,6 @@ public class Main
         List<String> nameSongs = new ArrayList<>();
         AudioInputStream audioInputStream;
 
-        // FILE STUFF DEFINITELY NOT WORKING
         File frequenciesFile = new File("src\\FrequenciesFile.txt");
         if (!frequenciesFile.exists())
             frequenciesFile.createNewFile();
@@ -29,8 +27,7 @@ public class Main
         Scanner scanner = new Scanner(frequenciesFile);
 
         // preparation for clustering
-        // decide on number of clusters I will have
-        int dimension = 5, k = 4;
+        int dimension = 5, k = 5;
 
         String[][] songKeys = {{"A#", "Gm"}, {"E"}, {"Ab"}, {"Cm", "F"}, {"Am"}, {"E"}, {"C", "F"}, {"A", "Fm"},
                 {"D", "Em"}, {"Am", "C"}, {"C", "D"}, {"Eb"}, {"D"}, {"C", "Bb"}, {"G", "D"}, {"Ab", "Eb"},
@@ -75,10 +72,12 @@ public class Main
             allFrequencies.add(toAdd);
         }
 
+        /*
         for (List<Double> a : allFrequencies)
         {
             System.out.println(a);
         }
+         */
 
         // for when I'm testing individual files
         /*
@@ -87,8 +86,6 @@ public class Main
          */
 
         // Don't run the following commented block of code if there is information on the allFrequenciesFile
-
-
         // FFT-ing all the songs
         for (File file : songList)
         {
@@ -121,7 +118,7 @@ public class Main
 
         // preparation for Hierarchical clustering
         // System.out.println(checkClusters(relatedKeys,
-           //     hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
+         //       hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
     }
 
     // apparently this is not working, yay. Look into this asap
@@ -528,6 +525,14 @@ public class Main
         for (int i = 0; i < k; i++)
             centroids.add(buildCentroidK(dimension));
 
+        for (int i = 0; i < centroids.size(); i++)
+        {
+            System.out.print("Initial position of centroid " + (i + 1) + ": ");
+            for (double c : centroids.get(i))
+                System.out.print(c + " ");
+            System.out.println();
+        }
+        /*
         System.out.print("Initial position centroid 1: ");
         for (double c : centroids.get(0))
             System.out.print(c + " ");
@@ -540,6 +545,8 @@ public class Main
         for (double c : centroids.get(2))
             System.out.print(c + " ");
         System.out.println();
+
+         */
 
         // What should be max value for iterations ?
         int counter = 0, maxIterations = 1010;
@@ -701,8 +708,6 @@ public class Main
             }
         }
 
-        // is my while in the right place? or must it be after this for loo
-        // i dunno, smt is not right
         while (clusters.size() > totalNumClusters && counter < maxIterations)
         {
             for (int i = 0; i < clusters.size(); i++)
@@ -737,7 +742,7 @@ public class Main
                 // clearing distance list to update it
                 for (List<Double> doubles : distance) doubles.clear();
 
-                // now i gotta calculate the centroid of each new cluster - OK
+                // calculate the centroid of each new cluster
                 for (int j = 0; j < clusters.size(); j++)
                 {
                     ArrayList<Double> sums = new ArrayList<>();
@@ -753,14 +758,13 @@ public class Main
                     for (int k = 0; k < dimension; k++)
                         sums.set(k, (sums.get(k) / clusters.get(j).size()));
 
-                    // what's going on here?!!!
                     for (int k = 0; k < dimension; k++)
                         centroids.get(j).set(k, sums.get(k));
 
                 }
 
-                // now I need to calculate the distance between the centroids and join more clusters
-                // loop starts againnn
+                // calculate the distance between the centroids and join more clusters
+                // loop starts again
                 for (int p = 0; p < centroids.size(); p++)
                 {
                     for (int j = 0; j < centroids.size(); j++)
