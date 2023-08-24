@@ -79,13 +79,13 @@ public class Main
         }
          */
 
-        // for when I'm testing individual files
+        // for when testing individual files
         /*
         audioInputStream = AudioSystem.getAudioInputStream(new File(("src/allSongs/middle-c.wav")));
         findFrequencies(audioInputStream, allFrequencies);
          */
 
-        // Don't run the following commented block of code if there is information on the allFrequenciesFile
+        // Do not run the following commented block of code if there is information on the allFrequenciesFile
         // FFT-ing all the songs
         for (File file : songList)
         {
@@ -133,8 +133,6 @@ public class Main
         // one time for each cluster
         for (int i = 0; i < keys.size(); i++)
         {
-            // the only problem here is that it's getting two keys from the same song and taking it as two different
-            // song keys, which might lead to a RelatedKeys row that is not the correct one
             ArrayList<ArrayList<String>> clusterNoRep = new ArrayList<>();
             for (int j = 0; j < keys.get(i).size(); j++)
             {
@@ -155,11 +153,8 @@ public class Main
                 }
             }
 
-            // I need to find a way to have loops that check all possibilities, a BUNCH of nested loops
             // num of loops = num of lists in list
             ArrayList<String> resultPermutation = new ArrayList<>();
-            // the problem is not in the next for-loop, it's here -> the output I'm getting is a resultPermutation
-            // with size = 0
             for (int l = 0; l < clusterNoRep.size(); l++)
             {
                 if (clusterNoRep.get(l).isEmpty())
@@ -169,7 +164,7 @@ public class Main
                 }
             }
             generatePermutations(clusterNoRep, resultPermutation, 0, "");
-            // now I'm gonna divide the permutations, put them in the similarity counter. The one with the biggest num,
+            // now, divide the permutations, put them in the similarity counter. The one with the biggest num,
             // is the one used to calculate the goodness of the cluster
 
             ArrayList<ArrayList<String>> allPermutations = new ArrayList<>();
@@ -180,7 +175,6 @@ public class Main
                 ArrayList<String> rList = new ArrayList<>(Arrays.asList(r));
                 allPermutations.add(rList);
             }
-            // System.out.println(allPermutations);
 
             ArrayList<ArrayList<Integer>> similarityCounter = new ArrayList<>();
             for (int a = 0; a < allPermutations.size(); a++)
@@ -198,7 +192,6 @@ public class Main
                 }
                 similarityCounter.add(Add);
             }
-            // System.out.println(similarityCounter);
 
             ArrayList<ArrayList<Integer>> maxIAndV = new ArrayList<>();
             for (int a = 0; a < allPermutations.size(); a++)
@@ -210,7 +203,6 @@ public class Main
                 toAdd.add(maxVal);
                 maxIAndV.add(toAdd);
             }
-            // System.out.println(maxIAndV);
 
             // determine largest similarity
             int largestInd = 0, largestV = 0;
@@ -226,12 +218,6 @@ public class Main
             // printing the row with largest similarity
             System.out.println(largestInd);
 
-            // now I need to compare the cluster with the chosen key row = largestInd!!! I CAN DO THIS
-            // i think the problem might be that I'm using the permutations to calculate which row from
-            // RelatedKeys would be the best, but then I'm not using it to calculate the number of data points
-            // in the right cluster... This way it's always getting the first key (if it fits) and it's like my
-            // calculations don't matter
-            // or is it? cause i'm using the row with the most similarities, so it should work either way...
             int same = 0, notSame = 0, total = keys.get(i).size();
             for (int j = 0; j < total; j++)
             {
@@ -256,15 +242,13 @@ public class Main
             rNumRelKey.get(i).add(total);
             rNumRelKey.get(i).add(same);
             rNumRelKey.get(i).add(notSame);
-            // percentage calculation of similar data points in the same cluster -> must be int, but you get the point
+            // percentage calculation of similar data points in the same cluster -> must be int
             int percentage = (same * 100)/total;
             rNumRelKey.get(i).add(percentage);
-            // SHOULD I GET THE FINAL THING IN PERCENTAGE? I guess, yeah
         }
         return rNumRelKey;
     }
 
-    // got this idea from a website, how do I cite it?
     static void generatePermutations(ArrayList<ArrayList<String>> lists, ArrayList<String> result, int depth, String current)
     {
         if (depth == lists.size())
@@ -307,9 +291,6 @@ public class Main
     {
         AudioFormat audioFormat = audioInputStream.getFormat();
         float sampleRate = audioFormat.getSampleRate();
-        // WHAT NUMBER DO I USE FOR n -> justify!!!!!!!!! - i think it has to be a power of 2? now 2^14
-        // this is the num of samples i collect per second? too small, increase
-        // the number of samples I collect per second is the sample rate divided by n -> smt like this
         int n = 16384;
         byte[] array = new byte[n];
 
@@ -338,7 +319,7 @@ public class Main
             mod2[i] = Math.sqrt((outputRe[i] * outputRe[i]) + (outputIm[i] * outputIm[i]));
         }
 
-        // this is me cutting the array in half
+        // cutting the array in half
         double[] mod = new double[mod2.length / 2];
         for (int i = 0; i < mod2.length / 2; i++)
         {
@@ -359,8 +340,7 @@ public class Main
         // find all the peaks
         ArrayList<Integer> peaks = isPeak(mod);
 
-        // AUTOMATIZAR ISSO
-        // getting 3 highest peaks and their index -> all I need is the index
+        // getting 3 highest peaks and their index -> all needed is the index
         double maxMod2 = 0, maxMod3 = 0, maxMod4 = 0, maxMod5 = 0, maxMod6 = 0;
         double iMaxMod2 = 0, iMaxMod3 = 0, iMaxMod4 = 0, iMaxMod5 = 0, iMaxMod6 = 0;
         for (Integer p : peaks)
@@ -404,13 +384,10 @@ public class Main
             }
         }
 
-        // printing the 3 frequencies = data that will be used for clustering
-        //System.out.println(iMaxMod + " " + iMaxMod2 + " " + iMaxMod3);
         // adding the frequencies to the 2d array to automatically calculate distances and cluster
         if (iMaxMod != 0 && iMaxMod2 != 0 && iMaxMod3 != 0)
         {
             List<Double> fToAdd = new ArrayList<>();
-            // System.out.println(iMaxMod2 + ", " + iMaxMod3 + ", " + iMaxMod4 + ", " + iMaxMod5);
 
             // double actualFrequency = actualFrequency(iMaxMod, sampleRate, n);
             double actualFrequency2 = actualFrequency(iMaxMod2, sampleRate, n);
@@ -419,7 +396,7 @@ public class Main
             double actualFrequency5 = actualFrequency(iMaxMod5, sampleRate, n);
             double actualFrequency6 = actualFrequency(iMaxMod6, sampleRate, n);
 
-            // add values to list so I can clusterrr
+            // add values to list to be used for clustering
             fToAdd.add(actualFrequency2);
             fToAdd.add(actualFrequency3);
             fToAdd.add(actualFrequency4);
@@ -436,10 +413,6 @@ public class Main
 
     static double actualFrequency(double iMaxMod, float sampleRate, double n)
     {
-        // It doesn't matter that the notes are in the same octave, it's actually good, cause that's what I'm
-        // measuring. If I have in many different octaves, it might just get songs with output frequencies in the
-        // the same octave, when it has a more similar song in another octave
-        // update WORD, now I have lower and upper boundaries
         double actualFrequency = iMaxMod * sampleRate / n;
         while (actualFrequency >= 880)
         {
@@ -451,21 +424,6 @@ public class Main
         }
 
         return actualFrequency;
-    }
-
-    // this is not working -> supposed to substitute the repeated loops up there
-    static double predFrequencies(ArrayList<Integer> peaks, double[] mod, double maxMod,
-                                  double maxMod2, double iMaxMod2)
-    {
-        for (Integer p : peaks)
-        {
-            if (mod[p] > maxMod2 && mod[p] < maxMod)
-            {
-                maxMod2 = mod[p];
-                iMaxMod2 = p;
-            }
-        }
-        return iMaxMod2;
     }
 
     //method for finding peaks
@@ -531,10 +489,9 @@ public class Main
             System.out.println();
         }
 
-        // What should be max value for iterations ?
         int counter = 0, maxIterations = 50;
 
-        // for loop to check in which cluster each point goes
+        // for loop, check in which cluster each point goes
         // calculate distance from both centroids, go to the closest one
         // recalculate centroids and distances until the points are basically equally divided
         boolean proceed = true;
@@ -573,7 +530,7 @@ public class Main
                 counter++;
                 for (ArrayList<Double> sum : sums)
                 {
-                    // I'm trying to correct empty clusters
+                    // trying to correct empty clusters
                     if (sum.isEmpty())
                     {
                         double[] newPosCentroid = buildCentroidK(dimension);
@@ -643,14 +600,12 @@ public class Main
         // timer setup
         long start = System.nanoTime();
 
-        // choose a better number for smallestDistance
         double sumX, sumY, sumZ, sumA, sumB, smallestDistance;
         int indexSong, index2 = 0;
         // What should be max value for iterations ?
         int counter = 0, maxIterations = 100;
 
-        // each list inside a list corresponds to a song, the values in the list are the distance
-        // to other songs
+        // each list inside a list corresponds to a song, the values in the list are the distance to other songs
         List<List<Double>> distance = new ArrayList<>();
         for (int i = 0; i < allFrequencies.size(); i++)
         {
@@ -678,7 +633,7 @@ public class Main
             clusters.add(cluster);
         }
 
-        //calculating proximity matrix - OK
+        //calculating proximity matrix
         for (int i = 0; i < centroids.size(); i++)
         {
             for (int j = 0; j < centroids.size(); j++)
@@ -699,7 +654,7 @@ public class Main
                 smallestDistance = 1000000000;
                 for (int j = 0; j < clusters.size(); j++)
                 {
-                    // this gets thw two clusters with smallest distance
+                    // this gets the two clusters with smallest distance
                     if (distance.get(i).get(j) < smallestDistance && distance.get(i).get(j) != 0)
                     {
                         smallestDistance = distance.get(i).get(j);
@@ -708,8 +663,7 @@ public class Main
                 }
 
                 // move an entire cluster
-                // find cluster with that has the smallest distance, pass it to the new cluster
-                // and delete it
+                // find cluster with that has the smallest distance, pass it to the new cluster and delete it
                 for (String s : clusters.get(index2))
                     clusters.get(i).add(s);
 
@@ -717,9 +671,6 @@ public class Main
                 clusters.remove(index2);
                 centroids.remove(index2);
                 distance.remove(index2);
-
-                // printing clusters before checking if it's done, so I can draw the histogram.
-                // System.out.println(clusters);
 
                 if (checkDone(clusters, totalNumClusters)) break;
 
@@ -768,10 +719,7 @@ public class Main
         for (List c : clusters)
             System.out.println(c);
 
-        // why am I printing the number of iterations?
-        // System.out.println(counter);
-
-        // creating the list used as a parameter to check "goodness" of clusters
+        // creating the list used as a parameter to later apply to the checkClusters method
         ArrayList<ArrayList<ArrayList<String>>> keys = new ArrayList<>();
         for (List<String> cluster : clusters)
         {
