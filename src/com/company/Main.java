@@ -121,7 +121,6 @@ public class Main
          //       hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
     }
 
-    // apparently this is not working, yay. Look into this asap
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
                                                        ArrayList<ArrayList<ArrayList<String>>> keys)
     {
@@ -512,7 +511,6 @@ public class Main
         return new double[]{Ds.get(indexMin), indexMin};
     }
 
-    // i have 5 "dimensions" now, not just X and Y
     static ArrayList<ArrayList<ArrayList<String>>> kMeansClusterManhattanD(int dimension,
                                                                            List<List<Double>> allFrequencies,
                                                                            List<String> nameSongs, int k,
@@ -532,24 +530,9 @@ public class Main
                 System.out.print(c + " ");
             System.out.println();
         }
-        /*
-        System.out.print("Initial position centroid 1: ");
-        for (double c : centroids.get(0))
-            System.out.print(c + " ");
-        System.out.println();
-        System.out.print("Initial position centroid 2: ");
-        for (double c : centroids.get(1))
-            System.out.print(c + " ");
-        System.out.println();
-        System.out.print("Initial position centroid 3: ");
-        for (double c : centroids.get(2))
-            System.out.print(c + " ");
-        System.out.println();
-
-         */
 
         // What should be max value for iterations ?
-        int counter = 0, maxIterations = 1010;
+        int counter = 0, maxIterations = 50;
 
         // for loop to check in which cluster each point goes
         // calculate distance from both centroids, go to the closest one
@@ -648,6 +631,7 @@ public class Main
         long end = System.nanoTime();
         System.out.println("Time taken for the clustering algorithm to run: " + (end - start) + " nano seconds");
 
+        System.out.println(counter);
         return keys;
     }
 
