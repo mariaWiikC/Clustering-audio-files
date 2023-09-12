@@ -4,8 +4,11 @@ import com.tambapps.fft4j.FastFouriers;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
@@ -13,7 +16,7 @@ public class Main
 {
     public static void main(String[] args) throws UnsupportedAudioFileException, IOException
     {
-        final File folder = new File("src/songsLowerSR");
+        final File folder = new File("src/songsTWO");
         final List<File> songList = Arrays.asList(folder.listFiles());
 
         List<List<Double>> allFrequencies = new ArrayList<>();
@@ -47,8 +50,9 @@ public class Main
                         {"A#", "Bb", "Gm", "D#", "Eb", "E#", "F", "B#m", "Cm", "Dm", "A#m", "Bbm"},
                         {"F", "Dm", "Bb", "C", "Gm", "Am", "Fm"}};
 
-        // only use these 3 blocks if there is nothing written in the frequency file
+        // only use these 3 blocks if there is something written in the frequency file
         // reading file to allFrequencies ArrayList
+        /*
         ArrayList<String> allFREQUENCIESstring = new ArrayList<>();
         while (scanner.hasNextLine())
         {
@@ -72,12 +76,14 @@ public class Main
             allFrequencies.add(toAdd);
         }
 
-        /*
+         */
+
+
         for (List<Double> a : allFrequencies)
         {
             System.out.println(a);
         }
-         */
+
 
         // for when testing individual files
         /*
@@ -89,11 +95,11 @@ public class Main
         // FFT-ing all the songs
         for (File file : songList)
         {
-            //audioInputStream = AudioSystem.getAudioInputStream(file);
-            // if (findFrequencies(audioInputStream, allFrequencies))
+            audioInputStream = AudioSystem.getAudioInputStream(file);
+            if (findFrequencies(audioInputStream, allFrequencies))
                 nameSongs.add(file.getName());
         }
-        /*
+
         try (FileWriter fw = new FileWriter(frequenciesFile.getAbsoluteFile()); BufferedWriter bw = new BufferedWriter(fw))
         {
             for (List<Double> list : allFrequencies)
@@ -111,14 +117,14 @@ public class Main
             System.out.println("Got exception: " + exc);
             System.exit(1);
         }
-         */
 
-        System.out.println(checkClusters(relatedKeys,
-                                         kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
+
+        // System.out.println(checkClusters(relatedKeys,
+                                       //  kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
 
         // preparation for Hierarchical clustering
-        // System.out.println(checkClusters(relatedKeys,
-         //       hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
+        System.out.println(checkClusters(relatedKeys,
+                hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
     }
 
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
@@ -326,9 +332,11 @@ public class Main
             mod[i] = mod2[i];
         }
 
+        // I MUST SET ALL iMaxMod TO BE HIGHER THAN 0, CAUSE IF IT'S ZERO, I GET A FREQUENCY EQUAL TO 0
+
         double maxMod = 0;
-        double iMaxMod = 0;
-        for (int m = 0; m < mod.length; m++)
+        double iMaxMod = 1;
+        for (int m = 1; m < mod.length; m++)
         {
             if (mod[m] > maxMod || mod[m] >= 14)
             {
@@ -342,7 +350,7 @@ public class Main
 
         // getting 3 highest peaks and their index -> all needed is the index
         double maxMod2 = 0, maxMod3 = 0, maxMod4 = 0, maxMod5 = 0, maxMod6 = 0;
-        double iMaxMod2 = 0, iMaxMod3 = 0, iMaxMod4 = 0, iMaxMod5 = 0, iMaxMod6 = 0;
+        double iMaxMod2 = 1, iMaxMod3 = 1, iMaxMod4 = 1, iMaxMod5 = 1, iMaxMod6 = 1;
         for (Integer p : peaks)
         {
             if (mod[p] > maxMod2 && mod[p] < maxMod)
