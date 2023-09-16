@@ -4,11 +4,8 @@ import com.tambapps.fft4j.FastFouriers;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
@@ -30,7 +27,7 @@ public class Main
         Scanner scanner = new Scanner(frequenciesFile);
 
         // preparation for clustering
-        int dimension = 5, k = 5;
+        int dimension = 5, k = 3;
 
         String[][] songKeys = {{"A#", "Gm"}, {"E"}, {"Ab"}, {"Cm", "F"}, {"Am"}, {"E"}, {"C", "F"}, {"A", "Fm"},
                 {"D", "Em"}, {"Am", "C"}, {"C", "D"}, {"Eb"}, {"D"}, {"C", "Bb"}, {"G", "D"}, {"Ab", "Eb"},
@@ -52,7 +49,7 @@ public class Main
 
         // only use these 3 blocks if there is something written in the frequency file
         // reading file to allFrequencies ArrayList
-        /*
+
         ArrayList<String> allFREQUENCIESstring = new ArrayList<>();
         while (scanner.hasNextLine())
         {
@@ -76,13 +73,14 @@ public class Main
             allFrequencies.add(toAdd);
         }
 
-         */
 
-
+        // printing the frequencies
+        /*
         for (List<Double> a : allFrequencies)
         {
             System.out.println(a);
         }
+         */
 
 
         // for when testing individual files
@@ -95,11 +93,12 @@ public class Main
         // FFT-ing all the songs
         for (File file : songList)
         {
-            audioInputStream = AudioSystem.getAudioInputStream(file);
-            if (findFrequencies(audioInputStream, allFrequencies))
-                nameSongs.add(file.getName());
+            // audioInputStream = AudioSystem.getAudioInputStream(file);
+            // if (findFrequencies(audioInputStream, allFrequencies))
+            nameSongs.add(file.getName());
         }
 
+        /*
         try (FileWriter fw = new FileWriter(frequenciesFile.getAbsoluteFile()); BufferedWriter bw = new BufferedWriter(fw))
         {
             for (List<Double> list : allFrequencies)
@@ -118,13 +117,71 @@ public class Main
             System.exit(1);
         }
 
+         */
 
-        // System.out.println(checkClusters(relatedKeys,
-                                       //  kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
+        //<editor-fold desc="Trials and averages">
+        ArrayList<ArrayList<Integer>> trial1 = checkClusters(relatedKeys,
+                kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys));
+
+        double avg1 = 0;
+        for (int i = 0; i < trial1.size(); i++)
+        {
+            avg1 = avg1 + trial1.get(i).get(3);
+        }
+        avg1 = avg1 / k;
+
+        ArrayList<ArrayList<Integer>> trial2 = checkClusters(relatedKeys,
+                kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys));
+
+        double avg2 = 0;
+        for (int i = 0; i < trial2.size(); i++)
+        {
+            avg2 = avg2 + trial2.get(i).get(3);
+        }
+        avg2 = avg2 / k;
+
+        ArrayList<ArrayList<Integer>> trial3 = checkClusters(relatedKeys,
+                kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys));
+
+        double avg3 = 0;
+        for (int i = 0; i < trial3.size(); i++)
+        {
+            avg3 = avg3 + trial3.get(i).get(3);
+        }
+        avg3 = avg3 / k;
+
+        ArrayList<ArrayList<Integer>> trial4 = checkClusters(relatedKeys,
+                kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys));
+
+        double avg4 = 0;
+        for (int i = 0; i < trial4.size(); i++)
+        {
+            avg4 = avg4 + trial4.get(i).get(3);
+        }
+        avg4 = avg4 / k;
+
+        ArrayList<ArrayList<Integer>> trial5 = checkClusters(relatedKeys,
+                kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys));
+
+        double avg5 = 0;
+        for (int i = 0; i < trial5.size(); i++)
+        {
+            avg5 = avg5 + trial5.get(i).get(3);
+        }
+        avg5 = avg5 / k;
+
+        double avgT = (avg1 + avg2 + avg3 + avg4 + avg5) / 5;
+        System.out.println(trial1);
+        System.out.println(trial2);
+        System.out.println(trial3);
+        System.out.println(trial4);
+        System.out.println(trial5);
+        System.out.println(avgT);
+        //</editor-fold>
 
         // preparation for Hierarchical clustering
-        System.out.println(checkClusters(relatedKeys,
-                hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
+        // System.out.println(checkClusters(relatedKeys,
+        // hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
     }
 
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
@@ -222,7 +279,7 @@ public class Main
                 }
             }
             // printing the row with largest similarity
-            System.out.println(largestInd);
+            // System.out.println(largestInd);
 
             int same = 0, notSame = 0, total = keys.get(i).size();
             for (int j = 0; j < total; j++)
@@ -248,8 +305,10 @@ public class Main
             rNumRelKey.get(i).add(total);
             rNumRelKey.get(i).add(same);
             rNumRelKey.get(i).add(notSame);
+            int percentage = 0;
             // percentage calculation of similar data points in the same cluster -> must be int
-            int percentage = (same * 100)/total;
+            if (same != 0)
+                percentage = (same * 100) / total;
             rNumRelKey.get(i).add(percentage);
         }
         return rNumRelKey;
@@ -297,7 +356,7 @@ public class Main
     {
         AudioFormat audioFormat = audioInputStream.getFormat();
         float sampleRate = audioFormat.getSampleRate();
-        int n = 16384;
+        int n = 65536;
         byte[] array = new byte[n];
 
         int sample = audioInputStream.read(array);
@@ -412,7 +471,7 @@ public class Main
             fToAdd.add(actualFrequency6);
 
             allFrequencies.add(fToAdd);
-            System.out.println(fToAdd);
+            // System.out.println(fToAdd);
             return true;
         }
         else
@@ -489,6 +548,7 @@ public class Main
         for (int i = 0; i < k; i++)
             centroids.add(buildCentroidK(dimension));
 
+        /*
         for (int i = 0; i < centroids.size(); i++)
         {
             System.out.print("Initial position of centroid " + (i + 1) + ": ");
@@ -496,8 +556,9 @@ public class Main
                 System.out.print(c + " ");
             System.out.println();
         }
+         */
 
-        int counter = 0, maxIterations = 50;
+        int counter = 0, maxIterations = 25;
 
         // for loop, check in which cluster each point goes
         // calculate distance from both centroids, go to the closest one
@@ -586,17 +647,19 @@ public class Main
                 key.add(toA);
                 for (int i = 0; i < songKeys[indexC].length; i++)
                 {
-                    System.out.print(songKeys[indexC][i] + ", ");
+                    // System.out.print(songKeys[indexC][i] + ", ");
                     toA.add(songKeys[indexC][i]);
                 }
-                System.out.print("; ");
+                // System.out.print("; ");
             }
-            System.out.println();
+            // System.out.println();
         }
         long end = System.nanoTime();
-        System.out.println("Time taken for the clustering algorithm to run: " + (end - start) + " nano seconds");
+        // System.out.println("Time taken for the clustering algorithm to run: " + (end - start) + " nano seconds");
+        System.out.println(end - start);
 
-        System.out.println(counter);
+        // System.out.println(counter - 1);
+        // System.out.println(clusters);
         return keys;
     }
 
@@ -610,8 +673,6 @@ public class Main
 
         double sumX, sumY, sumZ, sumA, sumB, smallestDistance;
         int indexSong, index2 = 0;
-        // What should be max value for iterations ?
-        int counter = 0, maxIterations = 100;
 
         // each list inside a list corresponds to a song, the values in the list are the distance to other songs
         List<List<Double>> distance = new ArrayList<>();
@@ -655,7 +716,7 @@ public class Main
             }
         }
 
-        while (clusters.size() > totalNumClusters && counter < maxIterations)
+        while (clusters.size() > totalNumClusters)
         {
             for (int i = 0; i < clusters.size(); i++)
             {
@@ -680,7 +741,10 @@ public class Main
                 centroids.remove(index2);
                 distance.remove(index2);
 
-                if (checkDone(clusters, totalNumClusters)) break;
+                // printing clusters to create histogram
+                // System.out.println(clusters);
+                if (checkDone(clusters, totalNumClusters))
+                    break;
 
                 // clearing distance list to update it
                 for (List<Double> doubles : distance) doubles.clear();
@@ -721,11 +785,12 @@ public class Main
                     }
                 }
             }
-            counter++;
         }
 
+        /*
         for (List c : clusters)
             System.out.println(c);
+         */
 
         // creating the list used as a parameter to later apply to the checkClusters method
         ArrayList<ArrayList<ArrayList<String>>> keys = new ArrayList<>();
@@ -741,12 +806,12 @@ public class Main
                 key.add(toA);
                 for (int i = 0; i < songKeys[indexC].length; i++)
                 {
-                    System.out.print(songKeys[indexC][i] + ", ");
+                    // System.out.print(songKeys[indexC][i] + ", ");
                     toA.add(songKeys[indexC][i]);
                 }
-                System.out.print("; ");
+                // System.out.print("; ");
             }
-            System.out.println();
+            // System.out.println();
         }
         long end = System.nanoTime();
         System.out.println("Time taken for the clustering algorithm to run: " + (end - start) + " nano seconds");
