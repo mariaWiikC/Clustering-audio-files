@@ -27,7 +27,7 @@ public class Main
         Scanner scanner = new Scanner(frequenciesFile);
 
         // preparation for clustering
-        int dimension = 5, k = 3;
+        int dimension = 5, k = 5;
 
         String[][] songKeys = {{"A#", "Gm"}, {"E"}, {"Ab"}, {"Cm", "F"}, {"Am"}, {"E"}, {"C", "F"}, {"A", "Fm"},
                 {"D", "Em"}, {"Am", "C"}, {"C", "D"}, {"Eb"}, {"D"}, {"C", "Bb"}, {"G", "D"}, {"Ab", "Eb"},
@@ -120,6 +120,7 @@ public class Main
          */
 
         //<editor-fold desc="Trials and averages">
+        /*
         ArrayList<ArrayList<Integer>> trial1 = checkClusters(relatedKeys,
                 kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys));
 
@@ -177,11 +178,12 @@ public class Main
         System.out.println(trial4);
         System.out.println(trial5);
         System.out.println(avgT);
+        */
         //</editor-fold>
 
         // preparation for Hierarchical clustering
-        // System.out.println(checkClusters(relatedKeys,
-        // hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
+        System.out.println(checkClusters(relatedKeys,
+                hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
     }
 
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
@@ -497,11 +499,15 @@ public class Main
     static ArrayList<Integer> isPeak(double[] arr)
     {
         ArrayList<Integer> iPeaks = new ArrayList<>();
-        for (int i = 0; i < arr.length; i++)
+        for (int i = 1; i < arr.length; i++)
         {
-            if (i > 0 && arr[i] > arr[i - 1] && i < arr.length - 1 && arr[i] > arr[i + 1] && i > 15)
+            // do I keep the condition if i > 15? try removing it and check results
+            if (arr[i] > arr[i - 1] && i < arr.length - 1 && arr[i] > arr[i + 1])
                 iPeaks.add(i);
         }
+        if (arr[arr.length - 1] > arr[arr.length - 2])
+            iPeaks.add(arr.length - 1);
+
         return iPeaks;
     }
 
