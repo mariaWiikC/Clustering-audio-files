@@ -27,7 +27,7 @@ public class Main
         Scanner scanner = new Scanner(frequenciesFile);
 
         // preparation for clustering
-        int dimension = 5, k = 5;
+        int dimension = 5, k = 4;
 
         String[][] songKeys = {{"A#", "Gm"}, {"E"}, {"Ab"}, {"Cm", "F"}, {"Am"}, {"E"}, {"C", "F"}, {"A", "Fm"},
                 {"D", "Em"}, {"Am", "C"}, {"C", "D"}, {"Eb"}, {"D"}, {"C", "Bb"}, {"G", "D"}, {"Ab", "Eb"},
@@ -119,7 +119,7 @@ public class Main
 
          */
 
-        //<editor-fold desc="Trials and averages">
+        //<editor-fold desc="Trials and averages (%)">
         /*
         ArrayList<ArrayList<Integer>> trial1 = checkClusters(relatedKeys,
                 kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys));
@@ -181,9 +181,14 @@ public class Main
         */
         //</editor-fold>
 
-        // preparation for Hierarchical clustering
+        // preparation for K-means clustering
         System.out.println(checkClusters(relatedKeys,
-                hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
+                kMeansClusterManhattanD(dimension, allFrequencies, nameSongs, k, songKeys)));
+
+        // preparation for Hierarchical clustering
+
+        // System.out.println(checkClusters(relatedKeys,
+        //      hierarchicalClusteringManhattanD(allFrequencies, nameSongs, songKeys, k, dimension)));
     }
 
     static ArrayList<ArrayList<Integer>> checkClusters(String[][] relatedKeys,
@@ -393,8 +398,6 @@ public class Main
             mod[i] = mod2[i];
         }
 
-        // I MUST SET ALL iMaxMod TO BE HIGHER THAN 0, CAUSE IF IT'S ZERO, I GET A FREQUENCY EQUAL TO 0
-
         double maxMod = 0;
         double iMaxMod = 1;
         for (int m = 1; m < mod.length; m++)
@@ -409,9 +412,9 @@ public class Main
         // find all the peaks
         ArrayList<Integer> peaks = isPeak(mod);
 
-        // getting 3 highest peaks and their index -> all needed is the index
-        double maxMod2 = 0, maxMod3 = 0, maxMod4 = 0, maxMod5 = 0, maxMod6 = 0;
-        double iMaxMod2 = 1, iMaxMod3 = 1, iMaxMod4 = 1, iMaxMod5 = 1, iMaxMod6 = 1;
+        // getting highest peaks and their index -> all needed is the index
+        double maxMod2 = 0, maxMod3 = 0, maxMod4 = 0, maxMod5 = 0;
+        double iMaxMod2 = 1, iMaxMod3 = 1, iMaxMod4 = 1, iMaxMod5 = 1;
         for (Integer p : peaks)
         {
             if (mod[p] > maxMod2 && mod[p] < maxMod)
@@ -444,33 +447,24 @@ public class Main
                 iMaxMod5 = p;
             }
         }
-        for (Integer p : peaks)
-        {
-            if (mod[p] > maxMod6 && mod[p] < maxMod5)
-            {
-                maxMod6 = mod[p];
-                iMaxMod6 = p;
-            }
-        }
 
         // adding the frequencies to the 2d array to automatically calculate distances and cluster
         if (iMaxMod != 0 && iMaxMod2 != 0 && iMaxMod3 != 0)
         {
             List<Double> fToAdd = new ArrayList<>();
 
-            // double actualFrequency = actualFrequency(iMaxMod, sampleRate, n);
+            double actualFrequency = actualFrequency(iMaxMod, sampleRate, n);
             double actualFrequency2 = actualFrequency(iMaxMod2, sampleRate, n);
             double actualFrequency3 = actualFrequency(iMaxMod3, sampleRate, n);
             double actualFrequency4 = actualFrequency(iMaxMod4, sampleRate, n);
             double actualFrequency5 = actualFrequency(iMaxMod5, sampleRate, n);
-            double actualFrequency6 = actualFrequency(iMaxMod6, sampleRate, n);
 
             // add values to list to be used for clustering
+            fToAdd.add(actualFrequency);
             fToAdd.add(actualFrequency2);
             fToAdd.add(actualFrequency3);
             fToAdd.add(actualFrequency4);
             fToAdd.add(actualFrequency5);
-            fToAdd.add(actualFrequency6);
 
             allFrequencies.add(fToAdd);
             // System.out.println(fToAdd);
@@ -501,7 +495,6 @@ public class Main
         ArrayList<Integer> iPeaks = new ArrayList<>();
         for (int i = 1; i < arr.length; i++)
         {
-            // do I keep the condition if i > 15? try removing it and check results
             if (arr[i] > arr[i - 1] && i < arr.length - 1 && arr[i] > arr[i + 1])
                 iPeaks.add(i);
         }
@@ -515,16 +508,6 @@ public class Main
     {
         int rnd = new Random().nextInt(array.length);
         return array[rnd];
-    }
-
-    static boolean search(List<String> arr, String key)
-    {
-        for (String a : arr)
-        {
-            if (a.equals(key))
-                return true;
-        }
-        return false;
     }
 
     static double[] findMinD(List<Double> Ds)
@@ -564,7 +547,7 @@ public class Main
         }
          */
 
-        int counter = 0, maxIterations = 25;
+        int counter = 0, maxIterations = 100;
 
         // for loop, check in which cluster each point goes
         // calculate distance from both centroids, go to the closest one
@@ -677,7 +660,7 @@ public class Main
         // timer setup
         long start = System.nanoTime();
 
-        double sumX, sumY, sumZ, sumA, sumB, smallestDistance;
+        double smallestDistance;
         int indexSong, index2 = 0;
 
         // each list inside a list corresponds to a song, the values in the list are the distance to other songs
